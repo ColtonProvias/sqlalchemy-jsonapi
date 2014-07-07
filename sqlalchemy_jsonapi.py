@@ -63,9 +63,9 @@ class JSONAPIMixin:
             rel_key = getattr(relationship.mapper.class_, 'jsonapi_key', relationship.mapper.class_.__tablename__)
             if relationship.direction == MANYTOONE:
                 for column in relationship.local_columns:
-                    if self.jsonapi_inflector(column) in obj.keys():
-                        obj['links'][self.jsonapi_inflector(relationship.key)] = str(obj[self.jsonapi_inflector(column)])
-                        del obj[self.jsonapi_inflector(column)]
+                    if self.jsonapi_inflector(column.name) in obj.keys():
+                        obj['links'][self.jsonapi_inflector(relationship.key)] = str(obj[self.jsonapi_inflector(column.name)])
+                        del obj[self.jsonapi_inflector(column.name)]
                 if depth > 0:
                     related_obj = getattr(self, relationship.key)
                     if isinstance(related_obj, JSONAPIMixin):
