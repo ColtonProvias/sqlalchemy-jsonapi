@@ -55,7 +55,8 @@ class JSONAPIMixin:
             elif callable(value):
                 obj[key] = value(self)
             else:
-                obj[key] = self.jsonapi_converters[type(value).__name__](value)
+                if self.jsonapi_converters[type(value).__name__] is not None:
+                    obj[key] = self.jsonapi_converters[type(value).__name__](value)
 
         # Serialize the relationships
         obj['links'] = {}
