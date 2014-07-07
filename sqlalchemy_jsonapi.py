@@ -18,7 +18,7 @@ class JSONAPIMixin:
         """
         return to_inflect
 
-    def jsonapi_prep(self, depth):
+    def jsonapi_prepare(self, depth):
         """
         Returns a tuple of obj, linked that is almost ready for the final
         serialization to JSON API format.
