@@ -61,18 +61,6 @@ class JSONAPIMixin:
                     linked[self._inflector(rel_key)][str(new_obj['id'])] = new_obj
         return obj, linked
 
-    def object_to_jsonapi(self, depth=1):
-        """
-        Serialize individual resources
-        """
-        obj, linked = self.jsonapi_prepare(depth)
-        to_return = {self._inflector(getattr(self, '__jsonapi_key__', self.__tablename__)): [obj],
-                     'linked': {},
-                     'meta': {}}
-        for key in linked.keys():
-            to_return['linked'][key] = list(linked[key].values())
-        return to_return
-
     @classmethod
     def collection_to_jsonapi(cls, collection, depth=1):
         """
