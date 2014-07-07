@@ -13,10 +13,10 @@ class JSONAPIMixin:
     Add this mixin to the models that you want to be accessible via your API.
     """
     _jsonapi_converters = {}
+
     _jsonapi_exclude_columns = []
     _jsonapi_extra_columns = []
     _jsonapi_column_data_overrides = {}
-    
 
     def _inflector(self, to_inflect):
         """
@@ -61,8 +61,6 @@ class JSONAPIMixin:
         obj['links'] = {}
         for relationship in self.__mapper__.relationships:
             rel_key = getattr(relationship.mapper.class_, '_jsonapi_key', relationship.mapper.class_.__tablename__)
-            if rel_key not in linked.keys():
-                    linked[self._inflector(rel_key)] = {}
             if relationship.direction == MANYTOONE:
                 for column in relationship.local_columns:
                     if self._inflector(column) in obj.keys():
@@ -71,15 +69,20 @@ class JSONAPIMixin:
                 if depth > 0:
                     related_obj = getattr(self, relationship.key)
                     if isinstance(related_obj, JSONAPIMixin):
+                        if rel_key not in linked.keys():
+                            linked[self._inflector(rel_key)] = {}
                         related_obj, related_linked = related_obj.jsonapi_prepare(depth - 1)
                         linked.update(related_linked)
                         linked[self._inflector(rel_key)][str(related_obj['id'])] = related_obj
             elif depth > 0:
-                obj['links'][self._inflector(relationship.key)] = []
                 related_objs = getattr(self, relationship.key)
                 for item in related_objs.all():
                     if not isinstance(item, JSONAPIMixin):
                         continue
+                    if self._inflector(relationship.key) not in obj['links'].keys():
+                        obj['links'][self._inflector(relationship.key)] = []
+                    if rel_key not in linked.keys():
+                        linked[self._inflector(rel_key)] = {}
                     obj['links'][self._inflector(relationship.key)].append(str(item.id))
                     new_obj, new_linked = item.jsonapi_prepare(depth - 1)
                     linked.update(new_linked)
