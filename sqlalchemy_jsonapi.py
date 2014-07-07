@@ -42,14 +42,15 @@ class JSONAPIMixin:
             if relationship.direction == MANYTOONE:
                 for column in relationship.local_columns:
                     if self._inflector(column) in obj.keys():
+                        obj['links'][self._inflector(relationship.key)] = str(obj[self._inflector(column)])
                         del obj[self._inflector(column)]
-                related_obj = getattr(self, relationship.key)
-                obj['links'][self._inflector(relationship.key)] = str(related_obj.id)
-                if depth > 0 and isinstance(related_obj, JSONAPIMixin):
-                    related_obj, related_linked = related_obj.jsonapi_prepare(depth - 1)
-                    linked.update(related_linked)
-                    linked[self._inflector(rel_key)][str(related_obj['id'])] = related_obj
-            else:
+                if depth > 0:
+                    related_obj = getattr(self, relationship.key)
+                    if isinstance(related_obj, JSONAPIMixin):
+                        related_obj, related_linked = related_obj.jsonapi_prepare(depth - 1)
+                        linked.update(related_linked)
+                        linked[self._inflector(rel_key)][str(related_obj['id'])] = related_obj
+            elif depth > 0:
                 obj['links'][self._inflector(relationship.key)] = []
                 related_objs = getattr(self, relationship.key)
                 for item in related_objs.all():
