@@ -18,7 +18,11 @@ class JSONAPIMixin:
         """
         return to_inflect
 
-    def jsonapi_serialized(self, depth):
+    def jsonapi_prep(self, depth):
+        """
+        Returns a tuple of obj, linked that is almost ready for the final
+        serialization to JSON API format.
+        """
         obj = {}
         linked = {}
 
@@ -42,7 +46,7 @@ class JSONAPIMixin:
                 related_obj = getattr(self, relationship.key)
                 obj['links'][self._inflector(relationship.key)] = str(related_obj.id)
                 if depth > 0 and isinstance(related_obj, JSONAPIMixin):
-                    related_obj, related_linked = related_obj.jsonapi_serialized(depth - 1)
+                    related_obj, related_linked = related_obj.jsonapi_prepare(depth - 1)
                     linked.update(related_linked)
                     linked[self._inflector(rel_key)][str(related_obj['id'])] = related_obj
             else:
@@ -52,13 +56,16 @@ class JSONAPIMixin:
                     if not isinstance(item, JSONAPIMixin):
                         continue
                     obj['links'][self._inflector(relationship.key)].append(str(item.id))
-                    new_obj, new_linked = item.jsonapi_serialized(depth - 1)
+                    new_obj, new_linked = item.jsonapi_prepare(depth - 1)
                     linked.update(new_linked)
                     linked[self._inflector(rel_key)][str(new_obj['id'])] = new_obj
         return obj, linked
 
     def object_to_jsonapi(self, depth=1):
-        obj, linked = self.jsonapi_serialized(depth)
+        """
+        Serialize individual resources
+        """
+        obj, linked = self.jsonapi_prepare(depth)
         to_return = {self._inflector(getattr(self, '__jsonapi_key__', self.__tablename__)): [obj],
                      'linked': {},
                      'meta': {}}
@@ -68,11 +75,14 @@ class JSONAPIMixin:
 
     @classmethod
     def collection_to_jsonapi(cls, collection, depth=1):
+        """
+        For serializing a collection of resources
+        """
         main_key = cls._inflector(cls, getattr(cls, '__jsonapi_key__', cls.__tablename__))
         to_return = {main_key: [], 'linked': {}, 'meta': {}}
         linked = {}
         for item in collection:
-            serialized = item.jsonapi_serialized(depth)
+            serialized = item.jsonapi_prepare(depth)
             if serialized is None:
                 continue
             obj, new_linked = serialized
