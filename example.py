@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy_jsonapi import JSONAPIMixin, JSONAPI, as_relationship
 
 # Start your engines...and session.
-engine = create_engine('sqlite:///:memory:', echo=True)
+engine = create_engine('sqlite:///:memory:')
 Base = declarative_base()
 session = sessionmaker(bind=engine)()
 
@@ -51,7 +51,6 @@ class Post(APIMixin, Base):
 
     @as_relationship()
     def my_relationship(self):
-        print('RELATED')
         return session.query(User).first()
 
 
@@ -95,6 +94,9 @@ Output from the pprint statement:
 {'linked': {'comments': [{'content': 'Sample comment',
                           'id': '1',
                           'links': {'post': '1', 'user': '1'}}],
+            'my_relationship': [{'id': '1',
+                                 'links': {},
+                                 'username': 'sampleuser'}],
             'users': [{'id': '1', 'links': {}, 'username': 'sampleuser'}]},
  'meta': {},
  'posts': [{'content': 'Lorem ipsum dolor sit amet fakus latinus',
