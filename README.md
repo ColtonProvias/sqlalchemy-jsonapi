@@ -7,7 +7,7 @@ WARNING: JSONAPI is currently under active development.  Thus the format of the 
 ## Basic Usage
 
 ```py
-from sqlalchemy_jsonapi import JSONAPIMixin
+from sqlalchemy_jsonapi import JSONAPIMixin, JSONAPI
 
 class User(JSONAPIMixin, Base):
     __tablename__ = 'users'
@@ -16,7 +16,8 @@ class User(JSONAPIMixin, Base):
 # ...
 
 # Return the JSONAPI data
-print(User.collection_to_jsonapi(session.query(User).all()))
+user_serializer = JSONAPI(User)
+print(user_serializer.serialize(session.query(User).all()))
 ```
 
 ## Larger example

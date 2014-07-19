@@ -11,7 +11,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy_jsonapi import JSONAPIMixin
+from sqlalchemy_jsonapi import JSONAPIMixin, JSONAPI, as_relationship
 
 # Start your engines...and session.
 engine = create_engine('sqlite:///:memory:', echo=True)
@@ -40,13 +40,20 @@ class User(APIMixin, Base):
 
 class Post(APIMixin, Base):
     __tablename__ = 'posts'
+    jsonapi_extra_relationships = ['my_relationship']
     id = Column(Integer, primary_key=True)
     title = Column(Unicode(100))
     content = Column(UnicodeText)
     user_id = Column(Integer, ForeignKey('users.id'))
 
-    user = relationship('User', lazy='joined',
+    user = relationship('User', lazy='select',
                         backref=backref('posts', lazy='dynamic'))
+
+    @as_relationship()
+    def my_relationship(self):
+        print('RELATED')
+        return session.query(User).first()
+
 
 class Comment(APIMixin, Base):
     __tablename__ = 'comments'
@@ -72,10 +79,12 @@ comment = Comment(content='Sample comment',
 session.add(user)
 session.commit()
 
-# Now to call the SQLAlchemy-JSONAPI serializer.  Just Pass it a collection.
-# For individual resources, just wrap them in a list.
+# Create the serializer and serialize a collection.
+# Note: It MUST be a list or a collection.  Individual objects can be wrapped
+#       in [].  e.g.: serialize([my_post])
+post_serializer = JSONAPI(Post)
 collection = session.query(Post).all()
-json_api_dict = Post.collection_to_jsonapi(collection)
+json_api_dict = post_serializer.serialize(collection)
 
 # Finally, let's see what the output is.
 pprint(json_api_dict)
