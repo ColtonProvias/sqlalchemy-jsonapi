@@ -9,7 +9,7 @@ from setuptools import setup
 
 
 setup(name='SQLAlchemy-JSONAPI',
-      version='0.1',
+      version='0.2',
       uri='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',

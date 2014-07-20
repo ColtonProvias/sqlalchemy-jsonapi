@@ -4,12 +4,20 @@
 
 WARNING: JSON API is currently under active development.  Thus the format of the API and this module may change drastically.
 
+# Installation
+
+Just install the package via pip.
+
+```
+pip install sqlalchemy-jsonapi
+```
+
 # Basic Usage
 
 First, define your model using `JSONAPIMixin`.
 
 ```py
-from sqlalchemy_jsonapi import JSONAPIMixin
+from sqlalchemy_jsonapi import JSONAPIMixin, JSONAPI
 
 class User(JSONAPIMixin, Base):
     __tablename__ = 'users'
