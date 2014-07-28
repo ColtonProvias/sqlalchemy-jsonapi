@@ -94,6 +94,18 @@ class JSONAPI:
         api_key = getattr(model, 'jsonapi_key', model.__tablename__)
         return self.inflector(api_key)
 
+    def sort_query(self, model, query, sorts):
+        if sorts is None:
+            return query
+        api_key = self.get_api_key(model)
+        for sort in sorts[api_key]:
+            if sort.startswith('-'):
+                sort_by = getattr(model, sort[1:]).desc()
+            else:
+                sort_by = getattr(model, sort)
+            query = query.order_by(sort_by)
+        return query
+
     def dump_column_data(self, item, fields):
         """
         Dumps the data from the columns/properties for a model instance.
@@ -124,7 +136,7 @@ class JSONAPI:
                 obj[key] = converted
         return obj
 
-    def dump_relationship_data(self, item, obj, depth, fields):
+    def dump_relationship_data(self, item, obj, depth, fields, sort):
         """
         Dumps all of the data related to relationships, modifying the dumped
         object as necessary.
@@ -174,10 +186,12 @@ class JSONAPI:
                         if linked_key not in linked.keys():
                             linked[linked_key] = {}
                         r_obj, r_lnk = self.dump_object(related, depth - 1,
-                                                        fields)
+                                                        fields, sort)
                         linked.update(r_lnk)
                         linked[linked_key][str(r_obj['id'])] = r_obj
                 else:
+                    if sort is not None and linked_key in sort.keys():
+                        related = self.sort_query(mapper, related, sort)
                     for item in list(related):
                         if not isinstance(item, JSONAPIMixin):
                             continue
@@ -187,20 +201,20 @@ class JSONAPI:
                             linked[linked_key] = {}
                         obj['links'][link_key].append(str(item.id))
                         r_obj, r_lnk = self.dump_object(item, depth - 1,
-                                                        fields)
+                                                        fields, sort)
                         linked.update(r_lnk)
                         linked[linked_key][str(r_obj['id'])] = r_obj
         return obj, linked
 
-    def dump_object(self, item, depth, fields):
+    def dump_object(self, item, depth, fields, sort):
         """
         Just something to override if you want to change the way data is
         pre-processed prior to the dump.
         """
         obj = self.dump_column_data(item, fields)
-        return self.dump_relationship_data(item, obj, depth, fields)
+        return self.dump_relationship_data(item, obj, depth, fields, sort)
 
-    def serialize(self, to_serialize, depth=1, fields=None):
+    def serialize(self, to_serialize, depth=1, fields=None, sort=None):
         """
         Call this to return a dict containing the dumped collection or object.
         """
@@ -218,8 +232,14 @@ class JSONAPI:
         if isinstance(fields, list):
             fields = {api_key: fields}
 
+        if isinstance(sort, list):
+            sort = {api_key: sort}
+
+        if not is_single:
+            to_serialize = self.sort_query(self.model, to_serialize, sort)
+
         for item in to_serialize:
-            dumped = self.dump_object(item, depth, fields)
+            dumped = self.dump_object(item, depth, fields, sort)
             if dumped is None:
                 continue
 

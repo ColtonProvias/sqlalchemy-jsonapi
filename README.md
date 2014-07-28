@@ -58,7 +58,18 @@ user_serializer.serialze(my_user, fields={'users': ['username', 'is_admin'],
 
 ## Sorting
 
-To be implemented soon.
+Sorting is very similar to the implementation of sparse fieldsets above.  Descending sorts are prefix with a `-`.
+
+```py
+user_serializer.serialize(my_user, sort=['username'])
+
+# For across models:
+
+user_serializer.serialize(my_user, sort={'users': ['username'],
+                                         'posts': ['-created_at']})
+```
+
+Note: Sorting only works on relationships that return an `sqlalchemy.orm.dynamic.AppenderQuery` at this time.  This is expected to be fixed soon as soon as I figure out the best way to implement it that isn't too hackish.
 
 ## Includes
 
