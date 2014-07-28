@@ -41,6 +41,31 @@ my_user = session.query(User).get(1)
 print(user_serializer.serialize(my_user))
 ```
 
+# Querying
+
+## Sparse Fieldsets
+
+To change the fieldset return, just include the `fields=` parameter when calling `serialize`.
+
+```py
+user_serializer.serialize(my_user, fields=['id', 'username', 'is_admin'])
+
+# Or for fieldsets across models:
+
+user_serializer.serialze(my_user, fields={'users': ['id', 'username', 'is_admin'],
+                                          'posts': ['id', 'title', 'created_at']})
+```
+
+Note: At the current time, `id` MUST be included as is shown in the JSON API spec.
+
+## Sorting
+
+To be implemented soon.
+
+## Includes
+
+To be implemented soon.
+
 # Advanced Usage
 
 To exclude columns or relationships, list them in the `jsonapi_exclude_columns` and `jsonapi_exclude_relationships` lists in your model:

@@ -90,13 +90,18 @@ class JSONAPI:
             return converter(to_convert)
         return SkipType
 
-    def dump_column_data(self, item):
+    def get_api_key(self, model):
+        api_key = getattr(model, 'jsonapi_key', model.__tablename__)
+        return self.inflector(api_key)
+
+    def dump_column_data(self, item, fields):
         """
         Dumps the data from the columns/properties for a model instance.
         """
         obj = dict()
         columns = list(item.__table__.columns)
         column_data = dict()
+        api_key = self.get_api_key(item)
 
         for column in columns:
             if column.name in item.jsonapi_exclude_columns:
@@ -110,12 +115,15 @@ class JSONAPI:
 
         for name, value in column_data.items():
             key = self.inflector(name)
+            if fields is not None and api_key in fields.keys() \
+                    and key not in fields[api_key]:
+                continue
             converted = self.convert(item, value)
             if converted != SkipType:
                 obj[key] = converted
         return obj
 
-    def dump_relationship_data(self, item, obj, depth):
+    def dump_relationship_data(self, item, obj, depth, fields):
         """
         Dumps all of the data related to relationships, modifying the dumped
         object as necessary.
@@ -164,7 +172,8 @@ class JSONAPI:
                     if isinstance(related, JSONAPIMixin):
                         if linked_key not in linked.keys():
                             linked[linked_key] = {}
-                        r_obj, r_lnk = self.dump_object(related, depth - 1)
+                        r_obj, r_lnk = self.dump_object(related, depth - 1,
+                                                        fields)
                         linked.update(r_lnk)
                         linked[linked_key][str(r_obj['id'])] = r_obj
                 else:
@@ -176,25 +185,25 @@ class JSONAPI:
                         if linked_key not in linked.keys():
                             linked[linked_key] = {}
                         obj['links'][link_key].append(str(item.id))
-                        r_obj, r_lnk = self.dump_object(item, depth - 1)
+                        r_obj, r_lnk = self.dump_object(item, depth - 1,
+                                                        fields)
                         linked.update(r_lnk)
                         linked[linked_key][str(r_obj['id'])] = r_obj
         return obj, linked
 
-    def dump_object(self, item, depth):
+    def dump_object(self, item, depth, fields):
         """
         Just something to override if you want to change the way data is
         pre-processed prior to the dump.
         """
-        obj = self.dump_column_data(item)
-        return self.dump_relationship_data(item, obj, depth)
+        obj = self.dump_column_data(item, fields)
+        return self.dump_relationship_data(item, obj, depth, fields)
 
-    def serialize(self, to_serialize, depth=1):
+    def serialize(self, to_serialize, depth=1, fields=None):
         """
         Call this to return a dict containing the dumped collection or object.
         """
-        api_key = getattr(self.model, 'jsonapi_key', self.model.__tablename__)
-        api_key = self.inflector(api_key)
+        api_key = self.get_api_key(self.model)
 
         to_return = {api_key: [], 'linked': {}, 'meta': {}}
         linked = dict()
@@ -205,8 +214,11 @@ class JSONAPI:
         else:
             is_single = False
 
+        if isinstance(fields, list):
+            fields = {api_key: fields}
+
         for item in to_serialize:
-            dumped = self.dump_object(item, depth)
+            dumped = self.dump_object(item, depth, fields)
             if dumped is None:
                 continue
 
