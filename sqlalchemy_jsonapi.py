@@ -115,8 +115,9 @@ class JSONAPI:
 
         for name, value in column_data.items():
             key = self.inflector(name)
-            if fields is not None and api_key in fields.keys() \
-                    and key not in fields[api_key]:
+            if key != 'id' and fields is not None and \
+                    api_key in fields.keys() and \
+                    key not in fields[api_key]:
                 continue
             converted = self.convert(item, value)
             if converted != SkipType:

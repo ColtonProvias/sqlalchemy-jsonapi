@@ -52,11 +52,9 @@ user_serializer.serialize(my_user, fields=['id', 'username', 'is_admin'])
 
 # Or for fieldsets across models:
 
-user_serializer.serialze(my_user, fields={'users': ['id', 'username', 'is_admin'],
-                                          'posts': ['id', 'title', 'created_at']})
+user_serializer.serialze(my_user, fields={'users': ['username', 'is_admin'],
+                                          'posts': ['title', 'created_at']})
 ```
-
-Note: At the current time, `id` MUST be included as is shown in the JSON API spec.
 
 ## Sorting
 
@@ -121,4 +119,25 @@ And finally, if you need your keys to be in a different format, override the inf
 class MySerializer(JSONAPI):
     def inflector(self, to_inflect):
         return to_inflect.upper()
+```
+
+## On the topic of IDs
+
+In the JSON API spec, the `id` key is a reserved keyword for unique IDs for each object.  Of course not all databases conform to this standard and it can get quite frustrating.  However, having an issue such as compound primary keys can be remedied easily.  Here's the quick and easy way to do it:
+
+```py
+class Video(JSONAPIMixin, Base):
+    __tablename__ = 'videos'
+    server_id = Column(Integer, primary_key=True)
+    video_id = Column(Integer, primary_key=True)
+
+    # Tell SQLAlchemy-JSONAPI that we are adding an extra column called `id`
+    jsonapi_extra_columns = ['id']
+
+    @property
+    def id(self):
+        # Acts as a column, returning a concatenated string of the two IDs.
+        # You can choose whatever format you want, but the returned value
+        # SHOULD be a string as per JSON API spec.
+        return str(self.server_id) + ':' + str(self.video_id)
 ```
