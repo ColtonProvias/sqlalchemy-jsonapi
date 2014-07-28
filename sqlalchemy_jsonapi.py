@@ -199,10 +199,11 @@ class JSONAPI:
         to_return = {api_key: [], 'linked': {}, 'meta': {}}
         linked = dict()
 
-        is_single = isinstance(to_serialize, JSONAPIMixin)
-
-        if is_single:
+        if isinstance(to_serialize, JSONAPIMixin):
+            is_single = True
             to_serialize = [to_serialize]
+        else:
+            is_single = False
 
         for item in to_serialize:
             dumped = self.dump_object(item, depth)

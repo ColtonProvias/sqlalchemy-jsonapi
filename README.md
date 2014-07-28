@@ -29,8 +29,16 @@ Now, to serialize your model data, create a serializer object from `JSONAPI`:
 
 ```py
 user_serializer = JSONAPI(User)
-collection = session.query(User).all()
-print(user_serializer.serialize(collection))
+query = session.query(User)
+print(user_serializer.serialize(query))
+```
+
+And for individual resources:
+
+```py
+user_serializer = JSONAPI(User)
+my_user = session.query(User).get(1)
+print(user_serializer.serialize(my_user))
 ```
 
 # Advanced Usage

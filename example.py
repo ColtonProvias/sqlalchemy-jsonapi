@@ -79,11 +79,11 @@ session.add(user)
 session.commit()
 
 # Create the serializer and serialize a collection.
-# Note: It MUST be a list or a collection.  Individual objects can be wrapped
-#       in [].  e.g.: serialize([my_post])
+# Note: It MUST be a list or a collection.  Individual objects require
+#       as_collection to be False in the call to serialize().
 post_serializer = JSONAPI(Post)
-collection = session.query(Post).all()
-json_api_dict = post_serializer.serialize(collection)
+query = session.query(Post)
+json_api_dict = post_serializer.serialize(query)
 
 # Finally, let's see what the output is.
 pprint(json_api_dict)
