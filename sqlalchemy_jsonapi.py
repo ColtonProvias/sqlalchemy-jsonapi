@@ -141,8 +141,8 @@ class JSONAPI:
         Dumps all of the data related to relationships, modifying the dumped
         object as necessary.
         """
-        relationships = dict(map((lambda x: (x.key, x)),
-                                 item.__mapper__.relationships))
+        relationships = dict(list(map((lambda x: (x.key, x)),
+                                      item.__mapper__.relationships)))
 
         for key in item.jsonapi_exclude_relationships:
             if key not in relationships.keys():
