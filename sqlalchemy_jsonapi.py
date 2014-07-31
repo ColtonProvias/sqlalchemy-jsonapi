@@ -85,7 +85,7 @@ class JSONAPI:
             return to_convert
         if callable(to_convert):
             return to_convert(item)
-        if self.converters[type(to_convert)] is not None:
+        if self.converters[type(to_convert).__name__] is not None:
             converter = self.converters[type(to_convert).__name__]
             return converter(to_convert)
         return SkipType
