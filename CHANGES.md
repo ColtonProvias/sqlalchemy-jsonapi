@@ -1,8 +1,12 @@
-#SQLAlchemy-JSONAPI Changelog
+# SQLAlchemy-JSONAPI Changelog
 
-## Version 0.2
+## 0.3 - Deserialization
 
-*Release to be disclosed soon*
+*In Development*
+
+## 0.2 - Querying and View Permissions
+
+*2014-07-31*
 
 * Changed `to_serialize` in `JSONAPI.serialize` from expecting a list or collection to also expecting a query.
 * Added `get_api_key` in `JSONAPI` that generates the key for the main requested resource.
@@ -12,7 +16,7 @@
 * Fixed converters where it would return a KeyError.
 * Added `jsonapi_can_view()` to `JSONAPIMixin`.
 
-## Version 0.1
+## 0.1 - Initial
 
 *2014-07-20*
 
