@@ -73,7 +73,18 @@ Note: Sorting only works on relationships that return an `sqlalchemy.orm.dynamic
 
 ## Includes
 
-To be implemented soon.
+The JSON API spec specifies a method to include resources to be sideloaded.  By default, SQLAlchemy-JSONAPI will include all available relationships.  However, if list is passed to `JSONAPI.serialize` via the `include` argument, it will override the default.
+
+For example, let's assume you received a request at `/users?include=comments,posts.tags`.  To handle this, it becomes very easy:
+
+```py
+# Split the string into a list
+parsed_include = request.args.get('include', '').split(',')
+
+user_serializer.serialize(user_query, include=parsed_include)
+```
+
+Just like sparse fieldsets above, this will only be able to access resources that it would otherwise have access to.  Thus if you have a model that has `jsonapi_relationships_exclude` set to `['government_secret']`, having `include=['government_secrets']` will not return that relationship.
 
 # Advanced Usage
 
