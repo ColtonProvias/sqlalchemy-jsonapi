@@ -25,7 +25,7 @@ def as_relationship(to_many=False, linked_key=None, link_key=None,
             wrapped.direction = MANYTOONE
         wrapped.key = link_key or wrapped.__name__
         wrapped.linked_key = linked_key or wrapped.key
-        wrapped.local_columns = []
+        wrapped.local_columns = columns
         return wrapped
     return wrapper
 
