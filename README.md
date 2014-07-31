@@ -143,6 +143,22 @@ class MySerializer(JSONAPI):
         return to_inflect.upper()
 ```
 
+## Permissions
+
+A good API should never give everybody full access to everything.  We need to check to make sure that the requester has acces to the requested resource.  Doing this is quite simple; just use the `jsonapi_can_view()` method of `JSONAPIMixin`:
+
+```py
+class Message(JSONAPIMixin, Base):
+    __tablename__ = 'messages'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+
+    user = relationship('User', lazy='joined', backref=backref('messages', lazy='dynamic'))
+
+    def jsonapi_can_view(self):
+        return current_user == self.user
+```
+
 ## On the topic of IDs
 
 In the JSON API spec, the `id` key is a reserved keyword for unique IDs for each object.  Of course not all databases conform to this standard and it can get quite frustrating.  However, having an issue such as compound primary keys can be remedied easily.  Here's the quick and easy way to do it:

@@ -46,6 +46,9 @@ class JSONAPIMixin:
         """ JSON API recommends having an id for each resource """
         raise NotImplemented
 
+    def jsonapi_can_view(self):
+        return True
+
 
 class SkipType(object):
     """
@@ -212,6 +215,8 @@ class JSONAPI:
                     related = getattr(item, relationship.key)
                 if relationship.direction == MANYTOONE:
                     if isinstance(related, JSONAPIMixin):
+                        if not related.jsonapi_can_view():
+                            continue
                         if dump_this and linked_key not in linked.keys():
                             linked[linked_key] = {}
                         r_obj, r_lnk = self.dump_object(related, depth - 1,
@@ -225,6 +230,8 @@ class JSONAPI:
                         related = self.sort_query(mapper, related, sort)
                     for item in list(related):
                         if not isinstance(item, JSONAPIMixin):
+                            continue
+                        if not related.jsonapi_can_view():
                             continue
                         if link_key not in obj['links'].keys():
                             obj['links'][link_key] = []
@@ -274,6 +281,8 @@ class JSONAPI:
             to_serialize = self.sort_query(self.model, to_serialize, sort)
 
         for item in to_serialize:
+            if not item.jsonapi_can_view():
+                continue
             dumped = self.dump_object(item, depth, fields, sort, include)
             if dumped is None:
                 continue

@@ -10,6 +10,7 @@
 * BREAKING Changed `jsonapi_*` properties to have more uniform names.
 * Fixed `as_relationship` where columns weren't being set as local_columns due to SQLAlchemy-JSONAPI's developer's mistake.
 * Fixed converters where it would return a KeyError.
+* Added `jsonapi_can_view()` to `JSONAPIMixin`.
 
 ## Version 0.1
 
