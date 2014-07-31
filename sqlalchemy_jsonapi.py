@@ -1,7 +1,9 @@
 """
-SQLAlchemy-JSONAPI
+SQLAlchemy-JSONAPI Serializer.
+
 Colton J. Provias - cj@coltonprovias.com
 http://github.com/coltonprovias/sqlalchemy-jsonapi
+Licensed with MIT License
 """
 
 
@@ -12,8 +14,13 @@ from sqlalchemy.orm.base import MANYTOONE, ONETOMANY
 def as_relationship(to_many=False, linked_key=None, link_key=None,
                     columns=[]):
     """
-    Decorates methods to add on properties needed to make them act like
-    relationships.
+    Turn a method into a pseudo-relationship for serialization.
+
+    Arguments:
+    - to_many: Whether the relationship is to-many or to-one.
+    - linked_key: The key used in the linked section of the serialized data
+    - link_key: The key used in the link section in the model's serialization
+    - columns: Columns tied to this relationship
     """
     def wrapper(f):
         @wraps(f)
@@ -23,64 +30,91 @@ def as_relationship(to_many=False, linked_key=None, link_key=None,
             wrapped.direction = ONETOMANY
         else:
             wrapped.direction = MANYTOONE
+
         wrapped.key = link_key or wrapped.__name__
         wrapped.linked_key = linked_key or wrapped.key
         wrapped.local_columns = columns
+
         return wrapped
     return wrapper
 
 
 class JSONAPIMixin:
-    """
-    Add this mixin to the models that you want to be accessible via your API.
-    """
+
+    """ Mixin that enables serialization of a model. """
+
+    # Columns to be excluded from serialization
     jsonapi_columns_exclude = []
+
+    # Extra columns to be included with serialization
     jsonapi_columns_include = []
+
+    # Hook for overriding column data
     jsonapi_columns_override = {}
 
+    # Relationships to be excluded from serialization
     jsonapi_relationships_exclude = []
+
+    # Extra relationships to be included with serialization
     jsonapi_relationships_include = []
+
+    # Hook for overriding relationships
     jsonapi_relationships_override = {}
 
     def id(self):
-        """ JSON API recommends having an id for each resource """
+        """ JSON API recommends having an id for each resource. """
         raise NotImplemented
 
     def jsonapi_can_view(self):
+        """ Return True if this model can be serialized. """
         return True
 
 
 class SkipType(object):
-    """
-    Just a quick thing to help skip conversions.  It's very useful for
-    passwords.
-    """
+
+    """ Used for skipping types during conversion. """
+
     pass
 
 
 class JSONAPI:
-    """
-    The JSONAPI Serializer.  This class can be overridden as necessary.
-    """
+
+    """ The main JSONAPI serializer class. """
+
+    # A dictionary of converters for serialization
     converters = {}
 
     def __init__(self, model):
         """
-        Let's get started!  The model must be a class of a SQLAlchemy model.
+        Create a serializer object.
+
+        Arguments:
+        - model: Should be a SQLAlchemy model class.
         """
         self.model = model
 
     def inflector(self, to_inflect):
         """
-        Override this to inflect the keys in your API.  This is useful for
-        example with ember-json-api, which prefers camelCase.
+        Format text for use in keys in serialization.
+
+        Override this if you need to meet requirements on your front-end.
+
+        Arguments:
+        - to_inflect: The string to be inflected
+
+        Returns the altered string.
         """
         return to_inflect
 
     def convert(self, item, to_convert):
         """
-        Converts from a provided type to something a little nicer for JSON
-        serialization
+        Convert from Python objects to JSON-friendly values.
+
+        Arguments:
+        - item: A SQLAlchemy model instance
+        - to_convert: Python object to be converted
+
+        Returns either a string, int, float, bool, or SkipType.
         """
         if to_convert is None:
             return None
@@ -94,10 +128,29 @@ class JSONAPI:
         return SkipType
 
     def get_api_key(self, model):
+        """
+        Generate a key for a model.
+
+        Arguments:
+        - model: SQLAlchemy model instance
+
+        Returns an inflected key that is generated from jsonapi_key or from
+        __tablename__.
+        """
         api_key = getattr(model, 'jsonapi_key', model.__tablename__)
         return self.inflector(api_key)
 
     def sort_query(self, model, query, sorts):
+        """
+        Sort a query based upon provided sorts.
+
+        Arguments:
+        - model: SQLAlchemy model class
+        - query: Instance of Query or AppenderQuery
+        - sorts: A dictionary of sorts keyed by the api_key for each model
+
+        Returns a query with appropriate order_by appended.
+        """
         if sorts is None:
             return query
         api_key = self.get_api_key(model)
@@ -110,6 +163,15 @@ class JSONAPI:
         return query
 
     def parse_include(self, include):
+        """
+        Parse the include query parameter.
+
+        Arguments:
+        - include: A list of resources to be included by link_keys
+
+        Returns a dictionary of the parsed include list.  A None value
+        signifies that the resource itself should be dumped.
+        """
         ret = {}
         for item in include:
             if '.' in item:
@@ -124,7 +186,14 @@ class JSONAPI:
 
     def dump_column_data(self, item, fields):
         """
-        Dumps the data from the columns/properties for a model instance.
+        Dump the data from the colums of a model instance.
+
+        Arguments:
+        - item: An SQLAlchemy model instance
+        - fields: A list of requested fields.  If it is None, all available
+                  fields will be returned.
+
+        Returns a dictionary representing the instance's data.
         """
         obj = dict()
         columns = list(item.__table__.columns)
@@ -154,8 +223,16 @@ class JSONAPI:
 
     def dump_relationship_data(self, item, obj, depth, fields, sort, include):
         """
-        Dumps all of the data related to relationships, modifying the dumped
-        object as necessary.
+        Handle relationship dumping for a model.
+
+        Arguments:
+        - item: SQLAlchemy model instance
+        - obj: Column data for the model post-dump
+        - depth: How much deeper into the relationships do we have to go
+                 captain?
+        - fields: A dictionary of fields to be parsed based on linked_keys.
+        - sort: A dictionary of fields to sort by
+        - include: A list of resources to be included by link_keys.
         """
         relationships = dict(list(map((lambda x: (x.key, x)),
                                       item.__mapper__.relationships)))
@@ -249,8 +326,14 @@ class JSONAPI:
 
     def dump_object(self, item, depth, fields, sort, include):
         """
-        Just something to override if you want to change the way data is
-        pre-processed prior to the dump.
+        Quick, simple way of coordinating a dump.
+
+        Arguments:
+        - item: Instance of a SQLAlchemy model
+        - depth: Integer of how deep relationships should be queried
+        - fields: Dictionary of fields to be returned, keyed by linked_keys
+        - sort: Dictionary of fields to sory by, keyed by linked_keys
+        - include: List of resources to side-load by link_keys.
         """
         obj = self.dump_column_data(item, fields)
         return self.dump_relationship_data(item, obj, depth, fields, sort,
@@ -259,7 +342,17 @@ class JSONAPI:
     def serialize(self, to_serialize, depth=1, fields=None, sort=None,
                   include=None):
         """
-        Call this to return a dict containing the dumped collection or object.
+        Perform the serialization to dictionary in JSON API format.
+
+        Arguments:
+        - to_serialize: The query, collection, or instance to serialize.
+        - depth: How deep to side-load relationships.  If include is provided,
+                 this will be overridden
+        - fields: Dictionary of fields to be returned keyed by linked_keys or
+                  a list of fields for the current instance
+        - sort: Dictionary of fields to sort by keyed by linked_keys or a list
+                of fields to sort by for the current instance
+        - include: List of resources to side-load by link_keys.
         """
         api_key = self.get_api_key(self.model)
 
