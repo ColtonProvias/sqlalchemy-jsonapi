@@ -176,7 +176,10 @@ class JSONAPI:
 
         obj['links'] = {}
         linked = {}
+        print('Dumping {} ({})'.format(item, str(type(item))))
+        print('Relationships: {}'.format(relationships))
         for key, relationship in relationships.items():
+            print(' - Relationship {}'.format(key))
             dump_this = True
             link_key = self.inflector(key)
             if hasattr(relationship, 'mapper'):
@@ -228,17 +231,17 @@ class JSONAPI:
                 else:
                     if sort is not None and linked_key in sort.keys():
                         related = self.sort_query(mapper, related, sort)
-                    for item in list(related):
-                        if not isinstance(item, JSONAPIMixin):
+                    for local_item in list(related):
+                        if not isinstance(local_item, JSONAPIMixin):
                             continue
-                        if not related.jsonapi_can_view():
+                        if not local_item.jsonapi_can_view():
                             continue
                         if link_key not in obj['links'].keys():
                             obj['links'][link_key] = []
                         if dump_this and linked_key not in linked.keys():
                             linked[linked_key] = {}
-                        obj['links'][link_key].append(str(item.id))
-                        r_obj, r_lnk = self.dump_object(item, depth - 1,
+                        obj['links'][link_key].append(str(local_item.id))
+                        r_obj, r_lnk = self.dump_object(local_item, depth - 1,
                                                         fields, sort,
                                                         local_include)
                         linked.update(r_lnk)
