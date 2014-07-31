@@ -14,7 +14,7 @@ from setuptools import setup
 
 
 setup(name='SQLAlchemy-JSONAPI',
-      version='0.2',
+      version='0.3',
       uri='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',
