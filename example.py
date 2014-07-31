@@ -22,7 +22,7 @@ session = sessionmaker(bind=engine)()
 # Extend the JSONAPIMixin so we can convert numerial IDs into strings.
 # This is not done automatically so as to be more back-end agnostic
 class APIMixin(JSONAPIMixin):
-    jsonapi_column_data_overrides = {
+    jsonapi_columns_override = {
         'id': lambda self: str(self.id)
     }
 
@@ -32,7 +32,7 @@ class User(APIMixin, Base):
     __tablename__ = 'users'
 
     # We don't want the password to be sent in the response, so we exclude it.
-    jsonapi_exclude_columns = ['password']
+    jsonapi_columns_exclude = ['password']
     id = Column(Integer, primary_key=True)
     username = Column(Unicode(30))
     password = Column(Unicode(30))
@@ -40,7 +40,7 @@ class User(APIMixin, Base):
 
 class Post(APIMixin, Base):
     __tablename__ = 'posts'
-    jsonapi_extra_relationships = ['my_relationship']
+    jsonapi_relationships_include = ['my_relationship']
     id = Column(Integer, primary_key=True)
     title = Column(Unicode(100))
     content = Column(UnicodeText)

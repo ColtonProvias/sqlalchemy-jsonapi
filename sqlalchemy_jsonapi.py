@@ -34,13 +34,13 @@ class JSONAPIMixin:
     """
     Add this mixin to the models that you want to be accessible via your API.
     """
-    jsonapi_exclude_columns = []
-    jsonapi_extra_columns = []
-    jsonapi_column_data_overrides = {}
+    jsonapi_columns_exclude = []
+    jsonapi_columns_include = []
+    jsonapi_columns_override = {}
 
-    jsonapi_exclude_relationships = []
-    jsonapi_extra_relationships = []
-    jsonapi_override_relationships = {}
+    jsonapi_relationships_exclude = []
+    jsonapi_relationships_include = []
+    jsonapi_relationships_override = {}
 
     def id(self):
         """ JSON API recommends having an id for each resource """
@@ -116,14 +116,14 @@ class JSONAPI:
         api_key = self.get_api_key(item)
 
         for column in columns:
-            if column.name in item.jsonapi_exclude_columns:
+            if column.name in item.jsonapi_columns_exclude:
                 continue
             column_data[column.name] = getattr(item, column.name)
 
-        for column in item.jsonapi_extra_columns:
+        for column in item.jsonapi_columns_include:
             column_data[column] = getattr(item, column)
 
-        column_data.update(item.jsonapi_column_data_overrides)
+        column_data.update(item.jsonapi_columns_override)
 
         for name, value in column_data.items():
             key = self.inflector(name)
@@ -144,15 +144,15 @@ class JSONAPI:
         relationships = dict(list(map((lambda x: (x.key, x)),
                                       item.__mapper__.relationships)))
 
-        for key in item.jsonapi_exclude_relationships:
+        for key in item.jsonapi_relationships_exclude:
             if key not in relationships.keys():
                 continue
             del relationships[key]
 
-        for key in item.jsonapi_extra_relationships:
+        for key in item.jsonapi_relationships_include:
             relationships[key] = getattr(item, key)
 
-        for key, value in item.jsonapi_override_relationships:
+        for key, value in item.jsonapi_relationships_override:
             relationships[key] = getattr(item, value)
 
         obj['links'] = {}

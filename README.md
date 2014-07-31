@@ -77,25 +77,25 @@ To be implemented soon.
 
 # Advanced Usage
 
-To exclude columns or relationships, list them in the `jsonapi_exclude_columns` and `jsonapi_exclude_relationships` lists in your model:
+To exclude columns or relationships, list them in the `jsonapi_columns_exclude` and `jsonapi_relationships_exclude` lists in your model:
 
 ```py
 class User(JSONAPIMixin, Base):
     __tablename__ = 'users'
-    jsonapi_exclude_columns = ['password', 'social_security_number']
-    jsonapi_exclude_relationships = ['credit_cards', 'php_test_fails']
+    jsonapi_columns_exclude = ['password', 'social_security_number']
+    jsonapi_relationships_exclude = ['credit_cards', 'php_test_fails']
     # ...
 ```
 
-To include properties or generated relationships, use the `jsonapi_extra_columns` and `jsonapi_extra_relationships` lists:
+To include properties or generated relationships, use the `jsonapi_columns_include` and `jsonapi_relationships_include` lists:
 
 ```py
 from sqlalchemy_jsonapi import as_relationship
 
 class User(JSONAPIMixin, Base):
     __tablename__ = 'users'
-    jsonapi_extra_columns = ['lines_coded']
-    jsonapi_extra_relationships = ['favorite_language']
+    jsonapi_columns_include = ['lines_coded']
+    jsonapi_relationships_include = ['favorite_language']
     # ...
 
     @property
@@ -112,8 +112,8 @@ To override a property or relationship, you can simply exclude and then include.
 ```py
 class User(JSONAPIMixin, Base):
     __tablename__ = 'users'
-    jsonapi_column_data_overrides = {'id': lambda x: str(x.id)}
-    jsonapi_override_relationships = {'is_admin': lambda x: x.roles.is_admin}
+    jsonapi_columns_override = {'id': lambda x: str(x.id)}
+    jsonapi_relationships_override = {'is_admin': lambda x: x.roles.is_admin}
 ```
 
 To add converters, simply subclass `JSONAPI` and use the converters property.  Setting a type to `None` will prevent it from being serialized.  For example:
@@ -143,7 +143,7 @@ class Video(JSONAPIMixin, Base):
     video_id = Column(Integer, primary_key=True)
 
     # Tell SQLAlchemy-JSONAPI that we are adding an extra column called `id`
-    jsonapi_extra_columns = ['id']
+    jsonapi_columns_include = ['id']
 
     @property
     def id(self):
