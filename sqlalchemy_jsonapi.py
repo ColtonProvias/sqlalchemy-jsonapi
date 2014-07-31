@@ -106,6 +106,19 @@ class JSONAPI:
             query = query.order_by(sort_by)
         return query
 
+    def parse_include(self, include):
+        ret = {}
+        for item in include:
+            if '.' in item:
+                local, remote = item.split('.', maxsplit=1)
+            else:
+                local = item
+                remote = None
+            if local not in ret.keys():
+                ret[local] = []
+            ret[local].append(remote)
+        return ret
+
     def dump_column_data(self, item, fields):
         """
         Dumps the data from the columns/properties for a model instance.
@@ -136,7 +149,7 @@ class JSONAPI:
                 obj[key] = converted
         return obj
 
-    def dump_relationship_data(self, item, obj, depth, fields, sort):
+    def dump_relationship_data(self, item, obj, depth, fields, sort, include):
         """
         Dumps all of the data related to relationships, modifying the dumped
         object as necessary.
@@ -155,9 +168,13 @@ class JSONAPI:
         for key, value in item.jsonapi_relationships_override:
             relationships[key] = getattr(item, value)
 
+        if include is not None:
+            include = self.parse_include(include)
+
         obj['links'] = {}
         linked = {}
         for key, relationship in relationships.items():
+            dump_this = True
             link_key = self.inflector(key)
             if hasattr(relationship, 'mapper'):
                 mapper = relationship.mapper.class_
@@ -176,19 +193,33 @@ class JSONAPI:
                         obj['links'][link_key] = str(obj[col_name])
                         del obj[col_name]
 
-            if depth > 0:
+            if include is not None:
+                if link_key not in include.keys():
+                    continue
+                local_include = include[link_key]
+                if None in include[link_key]:
+                    local_include.remove(None)
+                else:
+                    dump_this = False
+            else:
+                local_include = None
+
+            if depth > 0 or (include is not None and
+                             local_include is not None):
                 if callable(relationship):
                     related = relationship()
                 else:
                     related = getattr(item, relationship.key)
                 if relationship.direction == MANYTOONE:
                     if isinstance(related, JSONAPIMixin):
-                        if linked_key not in linked.keys():
+                        if dump_this and linked_key not in linked.keys():
                             linked[linked_key] = {}
                         r_obj, r_lnk = self.dump_object(related, depth - 1,
-                                                        fields, sort)
+                                                        fields, sort,
+                                                        local_include)
                         linked.update(r_lnk)
-                        linked[linked_key][str(r_obj['id'])] = r_obj
+                        if dump_this:
+                            linked[linked_key][str(r_obj['id'])] = r_obj
                 else:
                     if sort is not None and linked_key in sort.keys():
                         related = self.sort_query(mapper, related, sort)
@@ -197,24 +228,28 @@ class JSONAPI:
                             continue
                         if link_key not in obj['links'].keys():
                             obj['links'][link_key] = []
-                        if linked_key not in linked.keys():
+                        if dump_this and linked_key not in linked.keys():
                             linked[linked_key] = {}
                         obj['links'][link_key].append(str(item.id))
                         r_obj, r_lnk = self.dump_object(item, depth - 1,
-                                                        fields, sort)
+                                                        fields, sort,
+                                                        local_include)
                         linked.update(r_lnk)
-                        linked[linked_key][str(r_obj['id'])] = r_obj
+                        if dump_this:
+                            linked[linked_key][str(r_obj['id'])] = r_obj
         return obj, linked
 
-    def dump_object(self, item, depth, fields, sort):
+    def dump_object(self, item, depth, fields, sort, include):
         """
         Just something to override if you want to change the way data is
         pre-processed prior to the dump.
         """
         obj = self.dump_column_data(item, fields)
-        return self.dump_relationship_data(item, obj, depth, fields, sort)
+        return self.dump_relationship_data(item, obj, depth, fields, sort,
+                                           include)
 
-    def serialize(self, to_serialize, depth=1, fields=None, sort=None):
+    def serialize(self, to_serialize, depth=1, fields=None, sort=None,
+                  include=None):
         """
         Call this to return a dict containing the dumped collection or object.
         """
@@ -239,7 +274,7 @@ class JSONAPI:
             to_serialize = self.sort_query(self.model, to_serialize, sort)
 
         for item in to_serialize:
-            dumped = self.dump_object(item, depth, fields, sort)
+            dumped = self.dump_object(item, depth, fields, sort, include)
             if dumped is None:
                 continue
 
