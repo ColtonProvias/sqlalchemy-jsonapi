@@ -1,9 +1,13 @@
 """
 SQLAlchemy-JSONAPI
--------------
+------------------
 
 JSON API Mixin for SQLAlchemy that aims to meet the full JSON API spec as
 published at http://jsonapi.org/format.
+
+Full documentation is available at:
+
+https://github.com/coltonprovias/sqlalchemy-jsonapi
 """
 
 from setuptools import setup
