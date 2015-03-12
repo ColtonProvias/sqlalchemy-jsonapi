@@ -2,6 +2,8 @@
 
 [JSON API](http://jsonapi.org/) implementation for use with [SQLAlchemy](http://www.sqlalchemy.org/).
 
+**CRITICAL: This version DOES NOT support the current JSON-API specification.  A full rewrite to support the changes in the format and to provide better extendability is in the works and will be released when JSON-API nears finalization.**
+
 WARNING: JSON API is currently under active development.  Thus the format of the API and this module may change drastically.
 
 # Installation
