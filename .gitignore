@@ -1,3 +1,6 @@
+# Created by https://www.gitignore.io
+
+### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -8,11 +11,12 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-bin/
 build/
 develop-eggs/
 dist/
+downloads/
 eggs/
+.eggs/
 lib/
 lib64/
 parts/
@@ -22,6 +26,12 @@ var/
 .installed.cfg
 *.egg
 
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -30,25 +40,35 @@ pip-delete-this-directory.txt
 htmlcov/
 .tox/
 .coverage
+.coverage.*
 .cache
 nosetests.xml
 coverage.xml
+*,cover
 
 # Translations
 *.mo
-
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
-# Rope
-.ropeproject
+*.pot
 
 # Django stuff:
 *.log
-*.pot
 
 # Sphinx documentation
 docs/_build/
+
+# PyBuilder
+target/
+
+# Created by https://www.gitignore.io
+
+### VirtualEnv ###
+# Virtualenv
+# http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
+.Python
+[Bb]in
+[Ii]nclude
+[Ll]ib
+[Ss]cripts
+pyvenv.cfg
+pip-selfcheck.json
 
