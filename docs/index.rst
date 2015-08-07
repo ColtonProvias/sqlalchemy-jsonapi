@@ -1,16 +1,17 @@
-.. SQLAlchemy-JSONAPI documentation master file, created by
-   sphinx-quickstart on Thu Aug  6 19:57:43 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to SQLAlchemy-JSONAPI's documentation!
-==============================================
+==================
+SQLAlchemy-JSONAPI
+==================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   quickstart
+   models
+   serializer
+   flask
+   errors
 
 
 Indices and tables
