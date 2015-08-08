@@ -5,7 +5,6 @@ Colton J. Provias <cj@coltonprovias.com>
 MIT License
 """
 
-
 import pytest
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_jsonapi.tests.app import app, db as db_

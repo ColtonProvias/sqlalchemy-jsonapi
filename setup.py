@@ -12,7 +12,6 @@ https://github.com/coltonprovias/sqlalchemy-jsonapi
 
 from setuptools import setup
 
-
 setup(name='SQLAlchemy-JSONAPI',
       version='0.3',
       uri='http://github.com/coltonprovias/sqlalchemy-jsonapi',
@@ -26,11 +25,10 @@ setup(name='SQLAlchemy-JSONAPI',
       include_package_data=True,
       platforms='any',
       install_requires=['SQLAlchemy'],
-      classifiers=['Environment :: Web Environment',
-                   'Intended Audience :: Developers',
-                   'License :: OSI Approved :: BSD License',
-                   'Operating System :: OS Independent',
-                   'Programming Language :: Python',
-                   'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-                   'Topic :: Software Development :: Libraries :: Python'
-                   ' Modules'])
+      classifiers=
+      ['Environment :: Web Environment', 'Intended Audience :: Developers',
+       'License :: OSI Approved :: BSD License',
+       'Operating System :: OS Independent', 'Programming Language :: Python',
+       'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+       'Topic :: Software Development :: Libraries :: Python'
+       ' Modules'])

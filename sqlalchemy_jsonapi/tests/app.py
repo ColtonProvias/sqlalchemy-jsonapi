@@ -27,7 +27,6 @@ app.config['SQLALCHEMY_ECHO'] = False
 
 
 class User(Timestamp, db.Model):
-
     """Quick and dirty user model."""
 
     #: If __jsonapi_type__ is not provided, it will use the class name instead.
@@ -36,7 +35,9 @@ class User(Timestamp, db.Model):
     id = Column(UUIDType, default=uuid4, primary_key=True)
     username = Column(Unicode(30), unique=True, nullable=False)
     email = Column(EmailType, nullable=False)
-    password = Column(PasswordType(schemes=['bcrypt']), nullable=False, info={'allow_serialize': False})
+    password = Column(PasswordType(schemes=['bcrypt']),
+                      nullable=False,
+                      info={'allow_serialize': False})
     is_admin = Column(Boolean, default=False)
 
     @hybrid_property
@@ -61,7 +62,8 @@ class User(Timestamp, db.Model):
         Here's hoping nobody submits something in unicode that is 31 characters
         long!!
         """
-        assert len(username) >= 5 and len(username) <= 30, 'Must be 5 to 30 characters long.'
+        assert len(username) >= 5 and len(
+            username) <= 30, 'Must be 5 to 30 characters long.'
 
     @validates('password')
     def validate_password(self, key, password):
@@ -70,7 +72,6 @@ class User(Timestamp, db.Model):
 
 
 class Post(Timestamp, db.Model):
-
     """Post model, as if this is a blog."""
 
     __tablename__ = 'posts'
@@ -82,21 +83,22 @@ class Post(Timestamp, db.Model):
     is_published = Column(Boolean, default=False)
     author_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
 
-    author = relationship('User', lazy='joined',
-                          backref=backref('posts', lazy='dynamic'))
+    author = relationship('User',
+                          lazy='joined',
+                          backref=backref('posts',
+                                          lazy='dynamic'))
 
     @validates('title')
     def validate_title(self, key, title):
         """Keep titles from getting too long."""
-        assert len(title) >= 5 or len(title) <= 100, 'Must be 5 to 100 '\
-            'characters long.'
+        assert len(title) >= 5 or len(
+            title) <= 100, 'Must be 5 to 100 characters long.'
 
     def jsonapi_allow_serialize(self):
         return self.is_published
 
 
 class Comment(Timestamp, db.Model):
-
     """Comment for each Post."""
 
     __tablename__ = 'comments'
@@ -106,14 +108,17 @@ class Comment(Timestamp, db.Model):
     author_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
     content = Column(UnicodeText, nullable=False)
 
-    post = relationship('Post', lazy='joined',
-                        backref=backref('comments', lazy='dynamic'))
-    author = relationship('User', lazy='joined',
-                          backref=backref('comments', lazy='dynamic'))
+    post = relationship('Post',
+                        lazy='joined',
+                        backref=backref('comments',
+                                        lazy='dynamic'))
+    author = relationship('User',
+                          lazy='joined',
+                          backref=backref('comments',
+                                          lazy='dynamic'))
 
 
 api = FlaskJSONAPI(app, db)
-
 
 if __name__ == '__main__':
     app.run()
