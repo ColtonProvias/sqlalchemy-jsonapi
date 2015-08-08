@@ -15,10 +15,9 @@ class FlaskJSONAPI(object):
                 'jsonapi-on-request-' + model_name))
 
         for endpoint in ['get_collection', 'post_collection', 'get_resource',
-                         'post_resource', 'patch_resource', 'delete_resource',
-                         'get_related', 'get_relationship',
-                         'post_relationship', 'patch_relationship',
-                         'delete_relationship']:
+                         'patch_resource', 'delete_resource', 'get_related',
+                         'get_relationship', 'post_relationship',
+                         'patch_relationship', 'delete_relationship']:
             for when in ['before', 'after']:
                 name = '_'.join([when, endpoint])
                 setattr(self, name, signal(

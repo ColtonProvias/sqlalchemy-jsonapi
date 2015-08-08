@@ -2,15 +2,15 @@ def test_200_on_to_many():
     raise NotImplementedError
 
 
-def test_400_on_hash_instead_of_array_provided():
+def test_409_on_hash_instead_of_array_provided():
     raise NotImplementedError
 
 
-def test_400_on_incompatible_model():
+def test_409_on_incompatible_model():
     raise NotImplementedError
 
 
-def test_400_on_to_one_relationship():
+def test_409_on_to_one_relationship():
     raise NotImplementedError
 
 

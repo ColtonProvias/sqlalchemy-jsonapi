@@ -26,7 +26,7 @@ def test_400_when_missing_type():
     raise NotImplementedError
 
 
-def test_400_for_invalid_value():
+def test_409_for_invalid_value():
     raise NotImplementedError
 
 
