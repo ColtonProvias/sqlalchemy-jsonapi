@@ -1,41 +1,46 @@
-def test_no_query():
+def test_200_without_querystring():
     raise NotImplementedError
 
 
-def test_not_found():
+def test_404_resource_not_found():
     raise NotImplementedError
 
 
-def test_permission_denied():
+def test_403_permission_denied():
     raise NotImplementedError
 
 
-def describe_include():
-    def single():
-        raise NotImplementedError
-
-    def multiple():
-        raise NotImplementedError
-
-    def single_skipping_connecting():
-        raise NotImplementedError
-
-    def not_a_relationship():
-        raise NotImplementedError
+def test_200_with_single_included_model():
+    raise NotImplementedError
 
 
-def describe_fields():
-    def single():
-        raise NotImplementedError
+def test_200_with_including_model_and_including_inbetween():
+    raise NotImplementedError
 
-    def multiple():
-        raise NotImplementedError
 
-    def across_relationships():
-        raise NotImplementedError
+def test_200_with_multiple_includes():
+    raise NotImplementedError
 
-    def not_a_field():
-        raise NotImplementedError
 
-    def bad_seperator():
-        raise NotImplementedError
+def test_400_when_given_attribute_for_include_instead_of_relationship():
+    raise NotImplementedError
+
+
+def test_400_when_given_missing_field_for_include():
+    raise NotImplementedError
+
+
+def test_200_with_single_field():
+    raise NotImplementedError
+
+
+def test_200_with_multiple_fields():
+    raise NotImplementedError
+
+
+def test_200_with_single_field_across_a_relationship():
+    raise NotImplementedError
+
+
+def test_400_when_incorrect_field_given():
+    raise NotImplementedError

@@ -1,46 +1,42 @@
-def test_success():
+def test_200():
     raise NotImplementedError
 
 
-def test_missing_content_type():
+def test_400_missing_content_type():
     raise NotImplementedError
 
 
-def test_missing_type():
+def test_400_missing_type():
     raise NotImplementedError
 
 
-def test_not_a_field():
+def test_404_resource_not_found():
     raise NotImplementedError
 
 
-def test_type_mismatch_to_one():
+def test_404_related_resource_not_found():
     raise NotImplementedError
 
 
-def test_type_mismatch_to_many():
+def test_400_field_not_found():
     raise NotImplementedError
 
 
-def test_type_mismatch_top_level():
+def test_409_type_mismatch_to_one():
     raise NotImplementedError
 
 
-def test_not_found():
+def test_409_type_mismatch_to_many():
     raise NotImplementedError
 
 
-def test_to_many_not_found():
+def test_409_validation_failed():
     raise NotImplementedError
 
 
-def test_to_one_not_found():
+def test_400_type_does_not_match_endpoint():
     raise NotImplementedError
 
 
-def test_bad_value():
-    raise NotImplementedError
-
-
-def test_permission_denied():
+def test_403_permission_denied():
     raise NotImplementedError

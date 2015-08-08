@@ -1,22 +1,18 @@
-def test_to_many():
+def test_200_on_deletion_from_to_many():
     raise NotImplementedError
 
 
-def test_not_found():
+def test_404_on_resource_not_found():
     raise NotImplementedError
 
 
-def test_to_one():
+def test_404_on_relationship_not_found():
     raise NotImplementedError
 
 
-def test_to_many_not_found():
+def test_403_on_permission_denied():
     raise NotImplementedError
 
 
-def test_link_not_found():
-    raise NotImplementedError
-
-
-def test_permission_denied():
+def test_400_on_to_one_provided():
     raise NotImplementedError

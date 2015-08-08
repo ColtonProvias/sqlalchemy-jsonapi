@@ -1,26 +1,34 @@
-def test_to_many():
+def test_200_on_to_many():
     raise NotImplementedError
 
 
-def test_not_found():
+def test_400_on_hash_instead_of_array_provided():
     raise NotImplementedError
 
 
-def test_to_one():
+def test_400_on_incompatible_model():
     raise NotImplementedError
 
 
-def test_not_a_link():
+def test_400_on_to_one_relationship():
     raise NotImplementedError
 
 
-def test_incompatible_model():
+def test_403_on_permission_denied():
     raise NotImplementedError
 
 
-def test_related_model_not_found():
+def test_403_on_permission_denied_on_related_model():
     raise NotImplementedError
 
 
-def test_permission_denied():
+def test_404_on_resource_not_found():
+    raise NotImplementedError
+
+
+def test_404_on_relationship_not_found():
+    raise NotImplementedError
+
+
+def test_404_on_related_resource_not_found():
     raise NotImplementedError
