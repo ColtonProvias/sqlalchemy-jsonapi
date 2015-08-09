@@ -1,3 +1,9 @@
+class JSONAPIResponse(object):
+    def __init__(self):
+        self.status_code = 200
+        self.data = {}
+
+
 class JSONAPI(object):
     def __init__(self, base):
         self.base = base
@@ -11,7 +17,7 @@ class JSONAPI(object):
             id=None,
             relation=None,
             relationship=None):
-        pass
+        return JSONAPIResponse()
 
     def post(self, session, data, type, id=None, relationship=None):
         pass

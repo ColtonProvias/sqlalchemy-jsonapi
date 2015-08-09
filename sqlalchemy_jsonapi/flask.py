@@ -76,7 +76,7 @@ class FlaskJSONAPI(object):
         self.after_get_collection.send(self,
                                        api_type=api_type,
                                        response=response)
-        self.on_response(self, api_type=api_type, response=response)
+        self.on_response.send(self, api_type=api_type, response=response)
         return self.handle_response(response)
 
     def post_collection(self, api_type):
@@ -87,7 +87,7 @@ class FlaskJSONAPI(object):
         self.after_post_collection.send(self,
                                         api_type=api_type,
                                         response=response)
-        self.on_response(self, api_type=api_type, response=response)
+        self.on_response.send(self, api_type=api_type, response=response)
         return self.handle_response(response)
 
     def get_resource(self, api_type, obj_id):
@@ -99,10 +99,10 @@ class FlaskJSONAPI(object):
                                      api_type=api_type,
                                      obj_id=obj_id,
                                      response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              response=response)
         return self.handle_response(response)
 
     def patch_resource(self, api_type, obj_id):
@@ -114,10 +114,10 @@ class FlaskJSONAPI(object):
                                        api_type=api_type,
                                        obj_id=obj_id,
                                        response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              response=response)
         return self.handle_response(response)
 
     def delete_resource(self, api_type, obj_id):
@@ -131,10 +131,10 @@ class FlaskJSONAPI(object):
                                         api_type=api_type,
                                         obj_id=obj_id,
                                         response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              response=response)
         return self.handle_response(response)
 
     def get_related(self, api_type, obj_id, relationship):
@@ -153,11 +153,11 @@ class FlaskJSONAPI(object):
                                     obj_id=obj_id,
                                     relationship=relationship,
                                     response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         relationship=relationship,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              relationship=relationship,
+                              response=response)
         return self.handle_response(response)
 
     def get_relationship(self, api_type, obj_id, relationship):
@@ -177,11 +177,11 @@ class FlaskJSONAPI(object):
                                          obj_id=obj_id,
                                          relationship=relationship,
                                          response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         relationship=relationship,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              relationship=relationship,
+                              response=response)
         return self.handle_response(response)
 
     def post_relationship(self, api_type, obj_id, relationship):
@@ -200,11 +200,11 @@ class FlaskJSONAPI(object):
                                           obj_id=obj_id,
                                           relationship=relationship,
                                           response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         relationship=relationship,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              relationship=relationship,
+                              response=response)
         return self.handle_response(response)
 
     def patch_relationship(self, api_type, obj_id, relationship):
@@ -223,11 +223,11 @@ class FlaskJSONAPI(object):
                                            obj_id=obj_id,
                                            relationship=relationship,
                                            response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         relationship=relationship,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              relationship=relationship,
+                              response=response)
         return self.handle_response(response)
 
     def delete_relationship(self, api_type, obj_id, relationship):
@@ -246,9 +246,9 @@ class FlaskJSONAPI(object):
                                             obj_id=obj_id,
                                             relationship=relationship,
                                             response=response)
-        self.on_response(self,
-                         api_type=api_type,
-                         obj_id=obj_id,
-                         relationship=relationship,
-                         response=response)
+        self.on_response.send(self,
+                              api_type=api_type,
+                              obj_id=obj_id,
+                              relationship=relationship,
+                              response=response)
         return self.handle_response(response)

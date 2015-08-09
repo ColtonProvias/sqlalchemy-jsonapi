@@ -5,9 +5,14 @@ Colton J. Provias <cj@coltonprovias.com>
 MIT License
 """
 
+import json
+
 import pytest
+from flask import Response
+from flask.testing import FlaskClient
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy_jsonapi.tests.app import app, db as db_
+from sqlalchemy_jsonapi.tests.app import db as db_
+from sqlalchemy_jsonapi.tests.app import app
 
 Session = sessionmaker()
 
@@ -43,8 +48,23 @@ def session(db):
     session.remove()
 
 
+class TestingResponse(Response):
+    def validate(self, status_code, error=None):
+        assert self.status_code == status_code
+        assert self.headers['Content-Type'] == 'application/vnd.api+json'
+        self.json_data = json.loads(self.data.decode())
+        return self
+
+
 @pytest.fixture
 def client(flask_app):
     """Set up the testing client."""
-    with flask_app.test_client() as c:
+    with FlaskClient(flask_app,
+                     use_cookies=True,
+                     response_wrapper=TestingResponse) as c:
         return c
+
+
+@pytest.fixture(scope='session')
+def fake_data(db):
+    pass
