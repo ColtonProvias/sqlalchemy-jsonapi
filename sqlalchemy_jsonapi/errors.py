@@ -1,9 +1,21 @@
+from uuid import uuid4
+
+
 class BaseError(Exception):
-    pass
+    @property
+    def data(self):
+        return {
+            'errors': [{
+                'id': uuid4(),
+                'code': self.code,
+                'status': self.status_code
+            }]
+        }
 
 
 class BadRequestError(BaseError):
-    pass
+    status_code = 400
+    code = 'bad_request'
 
 
 class NotAFieldError(BaseError):
@@ -27,7 +39,8 @@ class OutOfBoundsError(BaseError):
 
 
 class PermissionDeniedError(BaseError):
-    pass
+    status_code = 403
+    code = 'permission_denied'
 
 
 class IDAlreadyExistsError(BaseError):
@@ -36,8 +49,8 @@ class IDAlreadyExistsError(BaseError):
 
 
 class InvalidTypeForEndpointError(BaseError):
-
-    pass
+    status_code = 400
+    code = 'invalid_type_for_endpoint'
 
 
 class MissingTypeError(BaseError):
@@ -51,14 +64,20 @@ class ValidationError(BaseError):
 
 
 class ResourceNotFoundError(BaseError):
-
-    pass
+    status_code = 404
+    code = 'resource_not_found'
 
 
 class RelationshipNotFoundError(BaseError):
-
-    pass
+    status_code = 404
+    code = 'relationship_not_found'
 
 
 class ToManyExpectedError(BaseError):
-    pass
+    status_code = 409
+    code = 'to_many_expected'
+
+
+class ResourceTypeNotFoundError(BaseError):
+    status_code = 404
+    code = 'resource_type_not_found'

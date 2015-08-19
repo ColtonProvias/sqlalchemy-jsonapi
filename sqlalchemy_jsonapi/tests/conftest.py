@@ -12,9 +12,12 @@ from flask import Response
 from flask.testing import FlaskClient
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_jsonapi.tests.app import db as db_
-from sqlalchemy_jsonapi.tests.app import app
+from sqlalchemy_jsonapi.tests.app import app, User, Post, Comment, Log
+from faker import Faker
 
 Session = sessionmaker()
+
+fake = Faker()
 
 
 @pytest.yield_fixture(scope='session')
@@ -52,7 +55,13 @@ class TestingResponse(Response):
     def validate(self, status_code, error=None):
         assert self.status_code == status_code
         assert self.headers['Content-Type'] == 'application/vnd.api+json'
-        self.json_data = json.loads(self.data.decode())
+        if status_code != 204:
+            self.json_data = json.loads(self.data.decode())
+            if error:
+                assert self.status_code == error.status_code
+                assert self.json_data['errors'][0]['code'] == error.code
+                assert self.json_data['errors'][0]['status'
+                                                   ] == error.status_code
         return self
 
 
@@ -65,6 +74,63 @@ def client(flask_app):
         return c
 
 
-@pytest.fixture(scope='session')
-def fake_data(db):
-    pass
+@pytest.fixture
+def user(session):
+    new_user = User(username=fake.user_name(),
+                    email=fake.email(),
+                    password=fake.sentence())
+    session.add(new_user)
+    session.commit()
+    return new_user
+
+
+@pytest.fixture
+def post(user, session):
+    new_post = Post(author=user,
+                    title=fake.sentence(),
+                    is_published=True,
+                    content=fake.paragraph())
+    session.add(new_post)
+    session.commit()
+    return new_post
+
+
+@pytest.fixture
+def unpublished_post(user, session):
+    new_post = Post(author=user,
+                    title=fake.sentence(),
+                    is_published=False,
+                    content=fake.paragraph())
+    session.add(new_post)
+    session.commit()
+    return new_post
+
+
+@pytest.fixture
+def bunch_of_posts(user, session):
+    for x in range(10):
+        post = Post(author=user,
+                    title=fake.sentence(),
+                    is_published=True,
+                    content=fake.paragraph())
+        post.comments.append(Comment(author=user,
+                                     content=fake.paragraph()))
+        session.add(post)
+
+    session.commit()
+
+
+@pytest.fixture
+def comment(user, post, session):
+    new_comment = Comment(post=post, author=user, content=fake.paragraph())
+    session.add(new_comment)
+    session.commit()
+    return new_comment
+
+
+@pytest.fixture
+def log(user, post, session):
+    new_log = Log(user=user, post=post)
+    session.add(new_log)
+    session.commit()
+    return new_log

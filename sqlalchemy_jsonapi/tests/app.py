@@ -12,7 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
-from sqlalchemy_jsonapi import FlaskJSONAPI
+from sqlalchemy_jsonapi import FlaskJSONAPI, Permissions, permission_test
 from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
 
 app = Flask(__name__)
@@ -53,6 +53,7 @@ class User(Timestamp, db.Model):
     def validate_email(self, key, email):
         """Strong email validation."""
         assert '@' in email, 'Not an email'
+        return email
 
     @validates('username')
     def validate_username(self, key, username):
@@ -64,11 +65,28 @@ class User(Timestamp, db.Model):
         """
         assert len(username) >= 5 and len(
             username) <= 30, 'Must be 5 to 30 characters long.'
+        return username
 
     @validates('password')
     def validate_password(self, key, password):
         """Validate a password's length."""
         assert len(password) >= 5, 'Password must be 5 characters or longer.'
+        return password
+
+    @permission_test(Permissions.VIEW, 'password')
+    def view_password(self):
+        """ Never let the password be seen. """
+        return False
+
+    @permission_test(Permissions.EDIT)
+    def allow_edit(self):
+        """ We want our users to be uneditable. """
+        return False
+
+    @permission_test(Permissions.DELETE)
+    def allow_delete(self):
+        """ Just like a popular social media site, we won't delete users. """
+        return False
 
 
 class Post(Timestamp, db.Model):
@@ -93,8 +111,11 @@ class Post(Timestamp, db.Model):
         """Keep titles from getting too long."""
         assert len(title) >= 5 or len(
             title) <= 100, 'Must be 5 to 100 characters long.'
+        return title
 
-    def jsonapi_allow_serialize(self):
+    @permission_test(Permissions.VIEW)
+    def allow_view(self):
+        """ Hide unpublished. """
         return self.is_published
 
 
@@ -116,6 +137,22 @@ class Comment(Timestamp, db.Model):
                           lazy='joined',
                           backref=backref('comments',
                                           lazy='dynamic'))
+
+
+class Log(Timestamp, db.Model):
+    __tablename__ = 'logs'
+    id = Column(UUIDType, default=uuid4, primary_key=True)
+    post_id = Column(UUIDType, ForeignKey('posts.id'))
+    user_id = Column(UUIDType, ForeignKey('users.id'))
+
+    post = relationship('Post',
+                        lazy='joined',
+                        backref=backref('logs',
+                                        lazy='dynamic'))
+    user = relationship('User',
+                        lazy='joined',
+                        backref=backref('logs',
+                                        lazy='dynamic'))
 
 
 api = FlaskJSONAPI(app, db)

@@ -28,7 +28,7 @@ def test_200_resource_creation(client):
     response = client.get('/api/users/{}/'.format(user_id)).validate(200)
 
 
-def test_200_resource_creation_with_relationships(fake_data, client):
+def test_200_resource_creation_with_relationships(user, client):
     payload = {
         'data': {
             'type': 'posts',
@@ -41,7 +41,7 @@ def test_200_resource_creation_with_relationships(fake_data, client):
                 'author': {
                     'data': {
                         'type': 'users',
-                        'id': fake_data['users'][0].id
+                        'id': str(user.id)
                     }
                 }
             }
@@ -59,7 +59,7 @@ def test_200_resource_creation_with_relationships(fake_data, client):
     response = client.get('/api/posts/{}/'.format(post_id)).validate(200)
     assert response.json_data['data']['relationships']['author']['data'][
         'id'
-    ] == fake_data['users'][0].id
+    ] == str(user.id)
 
 
 def test_403_when_access_is_denied(client):
@@ -69,11 +69,11 @@ def test_403_when_access_is_denied(client):
                     403, PermissionDeniedError)
 
 
-def test_409_when_id_already_exists(fake_data, client):
+def test_409_when_id_already_exists(user, client):
     payload = {
         'data': {
             'type': 'users',
-            'id': fake_data['users'][0].id,
+            'id': str(user.id),
             'attributes': {
                 'username': 'my_user',
                 'email': 'user@example.com',
@@ -87,7 +87,7 @@ def test_409_when_id_already_exists(fake_data, client):
                     409, IDAlreadyExistsError)
 
 
-def test_409_when_type_doesnt_match_endpoint(fake_data, client):
+def test_409_when_type_doesnt_match_endpoint(client):
     payload = {'data': {'type': 'posts'}}
     client.post('/api/users/',
                 data=json.dumps(payload),
@@ -95,11 +95,11 @@ def test_409_when_type_doesnt_match_endpoint(fake_data, client):
                     409, InvalidTypeForEndpointError)
 
 
-def test_400_when_missing_content_type(fake_data, client):
+def test_400_when_missing_content_type(client):
     client.post('/api/users/', data='{}').validate(409, BadRequestError)
 
 
-def test_409_when_missing_type(fake_data, client):
+def test_409_when_missing_type(client):
     payload = {
         'data': {
             'attributes': {
@@ -115,7 +115,7 @@ def test_409_when_missing_type(fake_data, client):
                     409, MissingTypeError)
 
 
-def test_409_for_invalid_value(fake_data, client):
+def test_409_for_invalid_value(client):
     payload = {
         'data': {
             'type': 'users',
@@ -132,7 +132,7 @@ def test_409_for_invalid_value(fake_data, client):
                     409, ValidationError)
 
 
-def test_409_for_wrong_field_name(fake_data, client):
+def test_409_for_wrong_field_name(client):
     payload = {
         'data': {
             'type': 'users',

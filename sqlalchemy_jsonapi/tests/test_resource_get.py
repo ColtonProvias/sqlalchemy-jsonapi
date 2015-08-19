@@ -1,13 +1,19 @@
+from sqlalchemy_jsonapi.errors import ResourceNotFoundError, PermissionDeniedError
+from uuid import uuid4
+
+
 def test_200_without_querystring():
     raise NotImplementedError
 
 
-def test_404_resource_not_found():
-    raise NotImplementedError
+def test_404_resource_not_found(client):
+    client.get('/api/posts/{}/'.format(uuid4())).validate(
+        404, ResourceNotFoundError)
 
 
-def test_403_permission_denied():
-    raise NotImplementedError
+def test_403_permission_denied(unpublished_post, client):
+    client.get('/api/posts/{}/'.format(unpublished_post.id)).validate(
+        403, PermissionDeniedError)
 
 
 def test_200_with_single_included_model():
