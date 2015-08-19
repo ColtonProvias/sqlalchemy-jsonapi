@@ -62,7 +62,10 @@ permission_test = PermissionTest
 class JSONAPIResponse(object):
     def __init__(self):
         self.status_code = 200
-        self.data = {}
+        self.data = {
+            'jsonapi': {'version': '1.0'},
+            'meta': {'sqlalchemy_jsonapi_version': '1.0.0'}
+        }
 
 
 def get_permission_test(model, field, permission):
@@ -211,7 +214,10 @@ class JSONAPI(object):
         return response
 
     def _parse_fields(self, query):
-        field_args = {k: v for k, v in query.items() if k.startswith('fields[')}
+        field_args = {
+            k: v
+            for k, v in query.items() if k.startswith('fields[')
+        }
         fields = {}
         for k, v in field_args.items():
             fields[k[7:-1]] = v
@@ -239,7 +245,9 @@ class JSONAPI(object):
             'included': {}
         }
         attrs_to_ignore = {'__mapper__', 'id'}
-        local_fields = fields.get(instance.__jsonapi_type__, instance.__mapper__.all_orm_descriptors.keys())
+        local_fields = fields.get(
+            instance.__jsonapi_type__,
+            instance.__mapper__.all_orm_descriptors.keys())
         for key, relationship in instance.__mapper__.relationships.items():
             attrs_to_ignore |= set(relationship.local_columns) | {key}
             if not get_permission_test(instance, key,
@@ -255,9 +263,10 @@ class JSONAPI(object):
                 else:
                     if key in local_fields:
                         to_ret['relationships'][key] = {
-                            'data':
-                            {'id': related.id,
-                             'type': related.__jsonapi_type__}
+                            'data': {
+                                'id': related.id,
+                                'type': related.__jsonapi_type__
+                            }
                         }
                     if key in include.keys():
                         built = self._build_full_resource(

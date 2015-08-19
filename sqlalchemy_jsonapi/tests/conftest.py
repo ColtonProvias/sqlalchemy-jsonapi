@@ -113,8 +113,7 @@ def bunch_of_posts(user, session):
                     title=fake.sentence(),
                     is_published=True,
                     content=fake.paragraph())
-        post.comments.append(Comment(author=user,
-                                     content=fake.paragraph()))
+        post.comments.append(Comment(author=user, content=fake.paragraph()))
         session.add(post)
 
     session.commit()
