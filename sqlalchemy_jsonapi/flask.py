@@ -50,16 +50,11 @@ class JSONAPIEncoder(json.JSONEncoder):
 
 
 views = [
-    (Method.GET, Endpoint.COLLECTION),
-    (Method.GET, Endpoint.RESOURCE),
-    (Method.GET, Endpoint.RELATED),
-    (Method.GET, Endpoint.RELATIONSHIP),
-    (Method.POST, Endpoint.COLLECTION),
-    (Method.POST, Endpoint.RELATIONSHIP),
-    (Method.PATCH, Endpoint.RESOURCE),
-    (Method.PATCH, Endpoint.RELATIONSHIP),
-    (Method.DELETE, Endpoint.RESOURCE),
-    (Method.DELETE, Endpoint.RELATIONSHIP)
+    (Method.GET, Endpoint.COLLECTION), (Method.GET, Endpoint.RESOURCE),
+    (Method.GET, Endpoint.RELATED), (Method.GET, Endpoint.RELATIONSHIP),
+    (Method.POST, Endpoint.COLLECTION), (Method.POST, Endpoint.RELATIONSHIP),
+    (Method.PATCH, Endpoint.RESOURCE), (Method.PATCH, Endpoint.RELATIONSHIP),
+    (Method.DELETE, Endpoint.RESOURCE), (Method.DELETE, Endpoint.RELATIONSHIP)
 ]
 
 
@@ -77,8 +72,11 @@ class FlaskJSONAPI(object):
     on_success = signal('jsonapi-on-success')
     on_error = signal('jsonapi-on-error')
 
-    def __init__(self, app=None, sqla=None, namespace='api',
-            route_prefix='/api'):
+    def __init__(self,
+                 app=None,
+                 sqla=None,
+                 namespace='api',
+                 route_prefix='/api'):
         self.app = app
         self.sqla = sqla
 
@@ -96,8 +94,7 @@ class FlaskJSONAPI(object):
         for view in views:
             method, endpoint = view
             self.app.add_url_rule(route_prefix + endpoint.value,
-                                  '{}_{}_{}'.format(namespace,
-                                                    method.name,
+                                  '{}_{}_{}'.format(namespace, method.name,
                                                     endpoint.name),
                                   self.generate_view(method, endpoint),
                                   methods=[method.name])
@@ -107,18 +104,23 @@ class FlaskJSONAPI(object):
             if method == Method.GET:
                 data = request.args
             else:
-                if request.headers.get('content-type', None) != 'application/vnd.api+json':
-                    response = make_response(json.dumps(MissingContentTypeError().data, cls=JSONAPIEncoder))
-                    response.status_code = 409
-                    response.content_type = 'application/vnd.api+json'
-                    return response
-                data = request.get_json(force=True)
-            data = override(data,
-                            self.on_request.send(self,
-                                                 method=method,
-                                                 endpoint=endpoint,
-                                                 data=data,
-                                                 req_args=kwargs))
+                if int(request.headers.get('content-length', 0)) > 0:
+                    if request.headers.get('content-type',
+                                           None) != 'application/vnd.api+json':
+                        response = make_response(
+                            json.dumps(MissingContentTypeError().data,
+                                       cls=JSONAPIEncoder))
+                        response.status_code = 409
+                        response.content_type = 'application/vnd.api+json'
+                        return response
+                    data = request.get_json(force=True)
+                else:
+                    data = None
+            data = override(data, self.on_request.send(self,
+                                                       method=method,
+                                                       endpoint=endpoint,
+                                                       data=data,
+                                                       req_args=kwargs))
             try:
                 handler = getattr(self.serializer,
                                   '{}_{}'.format(method.name.lower(),
@@ -133,18 +135,17 @@ class FlaskJSONAPI(object):
                                                          response=response))
             except BaseError as exc:
                 self.sqla.session.rollback()
-                response = override(exc,
-                                    self.on_error.send(self,
-                                                       method=method,
-                                                       endpoint=endpoint,
-                                                       data=data,
-                                                       req_args=kwargs,
-                                                       error=exc))
+                response = override(exc, self.on_error.send(self,
+                                                            method=method,
+                                                            endpoint=endpoint,
+                                                            data=data,
+                                                            req_args=kwargs,
+                                                            error=exc))
             rendered_response = make_response()
             if response.status_code != 204:
                 rendered_response = make_response(
-                    json.dumps(response.data, cls=JSONAPIEncoder)
-                )
+                    json.dumps(response.data,
+                               cls=JSONAPIEncoder))
             rendered_response.status_code = response.status_code
             rendered_response.content_type = 'application/vnd.api+json'
             return override(rendered_response,
@@ -154,4 +155,5 @@ class FlaskJSONAPI(object):
                                                   data=data,
                                                   req_args=kwargs,
                                                   response=rendered_response))
+
         return new_view

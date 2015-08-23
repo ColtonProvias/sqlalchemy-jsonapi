@@ -3,16 +3,39 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, PermissionDeniedError, ResourceNotFoundError,
-    RelatedResourceNotFoundError, NotAFieldError)
+    RelatedResourceNotFoundError, NotAFieldError, RelationshipNotFoundError,
+    ValidationError, MissingTypeError)
 
 
-def test_200(client, post):
-    payload = {}
-    response = client.patch('/api/patch/{}/'.format(post.id),
+def test_200(client, post, user):
+    payload = {
+        'data': {
+            'type': 'posts',
+            'id': str(post.id),
+            'attributes': {
+                'title': 'I just lost the game'
+            },
+            'relationships': {
+                'author': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }
+            }
+        }
+    }
+    response = client.patch('/api/posts/{}/'.format(post.id),
                             data=json.dumps(payload),
                             content_type='application/vnd.api+json').validate(
                                 200)
-    assert response.json_data['id'] == None
+    assert response.json_data['data']['id'] == str(post.id)
+    assert response.json_data['data']['type'] == 'posts'
+    assert response.json_data['data']['attributes']['title'
+                                                    ] == 'I just lost the game'
+    assert response.json_data['data']['relationships']['author']['data'][
+        'id'
+    ] == str(user.id)
 
 
 def test_400_missing_type(post, client):
@@ -33,7 +56,7 @@ def test_404_related_resource_not_found(client, post):
     payload = {
         'data': {
             'type': 'posts',
-            'id': post.id,
+            'id': str(post.id),
             'relationships': {
                 'author': {
                     'data': {
@@ -47,19 +70,19 @@ def test_404_related_resource_not_found(client, post):
     client.patch('/api/posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
-                     400, RelatedResourceNotFoundError)
+                     404, RelatedResourceNotFoundError)
 
 
-def test_400_field_not_found(client, post):
+def test_404_field_not_found(client, post, user):
     payload = {
         'data': {
             'type': 'posts',
-            'id': post.id,
+            'id': str(post.id),
             'relationships': {
                 'authors': {
                     'data': {
                         'type': 'users',
-                        'id': str(uuid4())
+                        'id': str(user.id)
                     }
                 }
             }
@@ -68,23 +91,97 @@ def test_400_field_not_found(client, post):
     client.patch('/api/posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
-                     400, NotAFieldError)
+                     404, RelationshipNotFoundError)
 
 
-def test_409_type_mismatch_to_one():
-    raise NotImplementedError
+def test_409_type_mismatch_to_one(client, post, user):
+    payload = {
+        'data': {
+            'type': 'posts',
+            'id': str(post.id),
+            'relationships': {
+                'comments': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }
+            }
+        }
+    }
+    client.patch('/api/posts/{}/'.format(post.id),
+                 data=json.dumps(payload),
+                 content_type='application/vnd.api+json').validate(
+                     409, ValidationError)
 
 
-def test_409_type_mismatch_to_many():
-    raise NotImplementedError
+def test_409_type_mismatch_to_many(client, post, user):
+    payload = {
+        'data': {
+            'type': 'posts',
+            'id': str(post.id),
+            'relationships': {
+                'author': [{
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }]
+            }
+        }
+    }
+    client.patch('/api/posts/{}/'.format(post.id),
+                 data=json.dumps(payload),
+                 content_type='application/vnd.api+json').validate(
+                     409, ValidationError)
 
 
-def test_409_validation_failed():
-    raise NotImplementedError
+def test_409_validation_failed(client, post, user):
+    payload = {
+        'data': {
+            'type': 'posts',
+            'id': str(post.id),
+            'attributes': {
+                'title': None
+            },
+            'relationships': {
+                'author': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }
+            }
+        }
+    }
+    client.patch('/api/posts/{}/'.format(post.id),
+                 data=json.dumps(payload),
+                 content_type='application/vnd.api+json').validate(
+                     409, ValidationError)
 
 
-def test_400_type_does_not_match_endpoint():
-    raise NotImplementedError
+def test_400_type_does_not_match_endpoint(client, post, user):
+    payload = {
+        'data': {
+            'type': 'users',
+            'id': str(post.id),
+            'attributes': {
+                'title': 'I just lost the game'
+            },
+            'relationships': {
+                'author': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }
+            }
+        }
+    }
+    client.patch('/api/posts/{}/'.format(post.id),
+                 data=json.dumps(payload),
+                 content_type='application/vnd.api+json').validate(
+                     400, MissingTypeError)
 
 
 def test_403_permission_denied(user, client):

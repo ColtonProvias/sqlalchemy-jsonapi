@@ -65,14 +65,18 @@ def test_409_on_to_many_set_to_null(post, client):
 
 def test_404_on_resource_not_found(client):
     client.patch('/api/posts/{}/relationships/comments/'.format(
-        uuid4()), data='{}', content_type='application/vnd.api+json').validate(
-            404, ResourceNotFoundError)
+        uuid4()),
+                 data='{}',
+                 content_type='application/vnd.api+json').validate(
+                     404, ResourceNotFoundError)
 
 
 def test_404_on_relationship_not_found(client, post):
     client.patch('/api/posts/{}/relationships/comment/'.format(
-        post.id), data='{}', content_type='application/vnd.api+json').validate(
-            404, RelationshipNotFoundError)
+        post.id),
+                 data='{}',
+                 content_type='application/vnd.api+json').validate(
+                     404, RelationshipNotFoundError)
 
 
 def test_404_on_related_item_not_found(post, client):

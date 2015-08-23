@@ -2,10 +2,12 @@ import json
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, IDAlreadyExistsError, InvalidTypeForEndpointError,
-    MissingTypeError, NotAFieldError, PermissionDeniedError, ValidationError, MissingContentTypeError, NotAnAttributeError)
+    MissingTypeError, NotAFieldError, PermissionDeniedError, ValidationError,
+    MissingContentTypeError, NotAnAttributeError)
 from faker import Faker
 
 fake = Faker()
+
 
 def test_200_resource_creation(client):
     payload = {
@@ -59,11 +61,7 @@ def test_200_resource_creation_with_relationships(user, client):
 
 
 def test_403_when_access_is_denied(client):
-    payload = {
-        'data': {
-            'type': 'logs'
-        }
-    }
+    payload = {'data': {'type': 'logs'}}
     client.post('/api/logs/',
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
@@ -97,7 +95,8 @@ def test_409_when_type_doesnt_match_endpoint(client):
 
 
 def test_409_when_missing_content_type(client):
-    client.post('/api/users/', data='{}').validate(409, MissingContentTypeError)
+    client.post('/api/users/',
+                data='{}').validate(409, MissingContentTypeError)
 
 
 def test_409_when_missing_type(client):

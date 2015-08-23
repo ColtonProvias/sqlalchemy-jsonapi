@@ -47,13 +47,13 @@ def test_200_with_multiple_fields(bunch_of_posts, client):
 
 def test_200_with_single_field_across_a_relationship(bunch_of_posts, client):
     response = client.get(
-        '/api/posts/?fields[posts]=title,content&fields[comments]=author').validate(
+        '/api/posts/?fields[posts]=title,content&fields[comments]=author&include=comments').validate(
             200)
     for item in response.json_data['data']:
         assert {'title', 'content'} == set(item['attributes'].keys())
         assert len(item['relationships']) == 0
     for item in response.json_data['included']:
-        assert {'title', 'content'} == set(item['attributes'].keys())
+        assert len(item['attributes'].keys()) == 0
         assert len(item['attributes']) == 0
         assert {'author'} == set(item['relationships'].keys())
 

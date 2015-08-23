@@ -39,7 +39,8 @@ class NotAnAttributeError(BaseError):
     title = 'Not An Attribute'
 
     def __init__(self, model, key):
-        self.detail = '{} has no attribute {}'.format(model.__jsonapi_type__, key)
+        self.detail = '{} has no attribute {}'.format(model.__jsonapi_type__,
+                                                      key)
 
 
 class NotSortableError(BaseError):
@@ -48,7 +49,8 @@ class NotSortableError(BaseError):
     code = 'not_sortable'
 
     def __init__(self, model, attr_name):
-        self.detail = 'The requested field {} on type {} is not a sortable field.'.format(model.__jsonapi_type__, attr_name)
+        self.detail = 'The requested field {} on type {} is not a sortable field.'.format(
+            model.__jsonapi_type__, attr_name)
 
 
 class OutOfBoundsError(BaseError):
@@ -61,7 +63,8 @@ class PermissionDeniedError(BaseError):
     title = 'Permission Denied'
 
     def __init__(self, permission, model, instance=None, relationship=None):
-        self.detail = "{} denied on {}".format(permission.value, model.__jsonapi_type__)
+        self.detail = "{} denied on {}".format(permission.value,
+                                               model.__jsonapi_type__)
         if instance is not None:
             self.detail += '.' + str(instance.id)
         if relationship is not None:
@@ -120,7 +123,8 @@ class RelatedResourceNotFoundError(BaseError):
     title = 'Related Resource Not Found'
 
     def __init__(self, api_type, obj_id):
-        self.detail = 'Related resource {}.{} not found'.format(api_type, obj_id)
+        self.detail = 'Related resource {}.{} not found'.format(api_type,
+                                                                obj_id)
 
 
 class RelationshipNotFoundError(BaseError):
@@ -138,7 +142,8 @@ class ToManyExpectedError(BaseError):
     title = 'To-Many Expected'
 
     def __init__(self, model, instance, relationship):
-        self.detail = '{}.{}.{} is not a to-many relationship'.format(model.__jsonapi_type__, instance.id, relationship.key)
+        self.detail = '{}.{}.{} is not a to-many relationship'.format(
+            model.__jsonapi_type__, instance.id, relationship.key)
 
 
 class ResourceTypeNotFoundError(BaseError):

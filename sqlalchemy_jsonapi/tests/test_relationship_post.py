@@ -11,7 +11,8 @@ def test_200_on_to_many(comment, post, client):
                            data=json.dumps(payload),
                            content_type='application/vnd.api+json').validate(
                                200)
-    assert comment.id in [str(x['id']) for x in response.json_data['data']]
+    assert str(comment.id) in [str(x['id'])
+                               for x in response.json_data['data']]
 
 
 def test_409_on_hash_instead_of_array_provided(comment, post, client):

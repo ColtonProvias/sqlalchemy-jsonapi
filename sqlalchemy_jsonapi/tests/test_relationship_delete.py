@@ -16,7 +16,8 @@ def test_200_on_deletion_from_to_many(comment, client):
     for item in response.json_data['data']:
         assert {'id', 'type'} == set(item.keys())
     assert payload['data'][0]['id'] not in [str(x['id'])
-                                         for x in response.json_data['data']]
+                                            for x in response.json_data['data']
+                                            ]
 
 
 def test_404_on_resource_not_found(client):

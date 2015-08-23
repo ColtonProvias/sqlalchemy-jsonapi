@@ -1,13 +1,17 @@
-from enum import Enum
-from inflection import pluralize, underscore
-from sqlalchemy.orm.interfaces import MANYTOONE
-from sqlalchemy.util.langhelpers import iterate_attributes
-from sqlalchemy.exc import IntegrityError
 import inspect
 
-from .errors import (PermissionDeniedError, RelationshipNotFoundError,
-                     ResourceNotFoundError, ResourceTypeNotFoundError,
-                     ToManyExpectedError, NotSortableError, BadRequestError, ValidationError, InvalidTypeForEndpointError, MissingTypeError, NotAnAttributeError, RelatedResourceNotFoundError)
+from enum import Enum
+from inflection import pluralize, underscore
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.interfaces import MANYTOONE
+from sqlalchemy.util.langhelpers import iterate_attributes
+
+from .errors import (BadRequestError, InvalidTypeForEndpointError,
+                     MissingTypeError, NotAnAttributeError, NotSortableError,
+                     PermissionDeniedError, RelatedResourceNotFoundError,
+                     RelationshipNotFoundError, ResourceNotFoundError,
+                     ResourceTypeNotFoundError, ToManyExpectedError,
+                     ValidationError)
 
 
 class AttributeActions(Enum):
@@ -180,7 +184,8 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.DELETE)
-    def delete_relationship(self, session, json_data, model, resource, relationship):
+    def delete_relationship(self, session, json_data, model, resource,
+                            relationship):
         if relationship.direction == MANYTOONE:
             return ToManyExpectedError(model, resource, relationship)
         response = JSONAPIResponse()
@@ -193,7 +198,9 @@ class JSONAPI(object):
         session.commit()
         session.refresh(resource)
         for item in getattr(resource, relationship.key):
-            response.data['data'].append({'type': item.__jsonapi_type__, 'id': item.id})
+            response.data['data'].append(
+                {'type': item.__jsonapi_type__,
+                 'id': item.id})
         return response
 
     def _check_instance_relationships_for_delete(self, instance):
@@ -217,7 +224,7 @@ class JSONAPI(object):
 
     @inject_model
     @inject_resource(Permissions.DELETE)
-    def delete_resource(self, session, model, resource):
+    def delete_resource(self, session, data, model, resource):
         try:
             self._check_instance_relationships_for_delete(resource)
         except PermissionDeniedError as e:
@@ -268,7 +275,6 @@ class JSONAPI(object):
             return offset, offset + limit - 1
         return 0, None
 
-
     def _build_full_resource(self, instance, include, fields):
         to_ret = {
             'id': instance.id,
@@ -288,9 +294,8 @@ class JSONAPI(object):
                 continue
             related = getattr(instance, key)
             if relationship.direction == MANYTOONE:
-                if not get_permission_test(
-                        related, None,
-                        Permissions.VIEW)(related) or related == None:
+                if related == None or not get_permission_test(
+                        related, None, Permissions.VIEW)(related):
                     if key in local_fields:
                         to_ret['relationships'][key] = {'data': None}
                 else:
@@ -395,11 +400,16 @@ class JSONAPI(object):
         response = JSONAPIResponse()
         if relationship.direction == MANYTOONE:
             related = getattr(resource, relationship.key)
-            response.data['data'] = {'type': related.__jsonapi_type__, 'id': related.id}
+            response.data[
+                'data'
+            ] = {'type': related.__jsonapi_type__,
+                 'id': related.id}
         else:
             response.data['data'] = []
             for related in getattr(resource, relationship.key):
-                response.data['data'].append({'type': related.__jsonapi_type__, 'id': related.id})
+                response.data['data'].append(
+                    {'type': related.__jsonapi_type__,
+                     'id': related.id})
         return response
 
     @inject_model
@@ -434,17 +444,21 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.EDIT)
-    def patch_relationship(self, session, json_data, model, resource, relationship):
+    def patch_relationship(self, session, json_data, model, resource,
+                           relationship):
         response = JSONAPIResponse()
         session.add(resource)
         try:
             if relationship.direction == MANYTOONE:
-                if not isinstance(json_data['data'], dict) and json_data['data'] != None:
+                if not isinstance(json_data['data'],
+                                      dict) and json_data['data'] != None:
                     raise ValidationError('Provided data must be a hash.')
                 if json_data['data'] == None:
                     setattr(resource, relationship.key, None)
                 else:
-                    to_relate = session.query(self.models[json_data['data']['type']]).get(json_data['data']['id'])
+                    to_relate = session.query(
+                        self.models[json_data['data']['type']]).get(
+                            json_data['data']['id'])
                     setattr(resource, relationship.key, to_relate)
             else:
                 if not isinstance(json_data['data'], list):
@@ -453,9 +467,11 @@ class JSONAPI(object):
                 for item in rel:
                     rel.remove(item)
                 for item in json_data['data']:
-                    to_relate = session.query(self.models[item['type']]).get(item['id'])
+                    to_relate = session.query(self.models[item['type']]).get(
+                        item['id'])
                     if not to_relate:
-                        raise ResourceNotFoundError(self.models[item['type']], item['id'])
+                        raise ResourceNotFoundError(self.models[item['type']],
+                                                    item['id'])
                     rel.append(to_relate)
             session.commit()
         except KeyError:
@@ -483,8 +499,54 @@ class JSONAPI(object):
 
     @inject_model
     @inject_resource(Permissions.EDIT)
-    def patch_resource(self, session, model, resource, json_data):
+    def patch_resource(self, session, json_data, model, resource):
+        if 'data' not in json_data.keys() or not ({'type', 'id'} < set(
+                json_data['data'].keys())):
+            raise BadRequestError('Invalid request')
+        try:
+            if 'id' in json_data['data'].keys():
+                resource.id = json_data['data']['id']
+
+            if 'attributes' in json_data['data'].keys():
+                for key, value in json_data['data']['attributes'].items():
+                    if key not in model.__mapper__.all_orm_descriptors.keys():
+                        raise NotAnAttributeError(model, key)
+                    setattr(resource, key, value)
+
+            if 'relationships' in json_data['data'].keys():
+                for key, value in json_data['data']['relationships'].items():
+                    if key not in resource.__mapper__.relationships.keys():
+                        raise RelationshipNotFoundError(model, resource, key)
+                    if isinstance(value['data'], list):
+                        for related in value['data']:
+                            related = session.query(
+                                self.models[related['type']]).get(
+                                    related['id'])
+                            if not related:
+                                raise RelatedResourceNotFoundError(
+                                    related['type'], related['id'])
+                            getattr(resource, key).append(related)
+                    else:
+                        related = session.query(
+                            self.models[value['data']['type']]).get(
+                                value['data']['id'])
+                        if not related:
+                            raise RelatedResourceNotFoundError(
+                                value['data']['type'], value['data']['id'])
+                        setattr(resource, key, related)
+
+            session.add(resource)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            raise ValidationError(str(e.orig))
+        except AssertionError as e:
+            raise ValidationError(e.msg)
+        session.refresh(resource)
         response = JSONAPIResponse()
+        built = self._build_full_resource(resource, {}, {})
+        built.pop('included')
+        response.data['data'] = built
         return response
 
     @inject_model
@@ -494,7 +556,8 @@ class JSONAPI(object):
         if 'type' not in data['data'].keys():
             raise MissingTypeError()
         if data['data']['type'] != model.__jsonapi_type__:
-            raise InvalidTypeForEndpointError(model.__jsonapi_type__, data['data']['type'])
+            raise InvalidTypeForEndpointError(model.__jsonapi_type__,
+                                              data['data']['type'])
         perm = get_permission_test(model, None, Permissions.CREATE)
         if not perm(model):
             return PermissionDeniedError(Permissions.CREATE, model)
@@ -513,10 +576,14 @@ class JSONAPI(object):
                 for key, value in data['data']['relationships'].items():
                     if isinstance(value['data'], list):
                         for related in value['data']:
-                            related = session.query(self.models[related['type']]).get(related['id'])
+                            related = session.query(
+                                self.models[related['type']]).get(
+                                    related['id'])
                             getattr(instance, key).append(related)
                     else:
-                        related = session.query(self.models[value['data']['type']]).get(value['data']['id'])
+                        related = session.query(
+                            self.models[value['data']['type']]).get(
+                                value['data']['id'])
                         setattr(instance, key, related)
 
             session.add(instance)
@@ -536,7 +603,29 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.CREATE)
-    def post_relationship(self, session, model, resource, relationship_key,
-                          json_data):
+    def post_relationship(self, session, json_data, model, resource,
+                          relationship):
+        if relationship.direction == MANYTOONE:
+            raise ValidationError('Cannot post to many-to-many relationship')
+        if not isinstance(json_data['data'], list):
+            raise ValidationError('/data must be an array')
         response = JSONAPIResponse()
+        rel = getattr(resource, relationship.key)
+        session.add(resource)
+        try:
+            for item in json_data['data']:
+                to_add = session.query(self.models[item['type']]).get(
+                    item['id'])
+                rel.append(to_add)
+        except KeyError:
+            raise ValidationError('Incompatible type provided')
+        session.commit()
+        session.refresh(resource)
+        related = getattr(resource, relationship.key)
+        response.data = {'data': []}
+        for item in related:
+            response.data['data'].append({
+                'id': item.id,
+                'type': item.__jsonapi_type__
+            })
         return response
