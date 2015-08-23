@@ -12,7 +12,7 @@ def test_200_on_to_one_set_to_resource(post, user, client):
         '/api/posts/{}/relationships/author/'.format(post.id),
         data=json.dumps(payload),
         content_type='application/vnd.api+json').validate(200)
-    assert response.json_data['data']['id'] == user.id
+    assert response.json_data['data']['id'] == str(user.id)
 
 
 def test_200_on_to_one_set_to_null(post, client):
@@ -65,13 +65,13 @@ def test_409_on_to_many_set_to_null(post, client):
 
 def test_404_on_resource_not_found(client):
     client.patch('/api/posts/{}/relationships/comments/'.format(
-        uuid4())).validate(
+        uuid4()), data='{}', content_type='application/vnd.api+json').validate(
             404, ResourceNotFoundError)
 
 
-def test_404_on_relationship_not_found(client):
+def test_404_on_relationship_not_found(client, post):
     client.patch('/api/posts/{}/relationships/comment/'.format(
-        uuid4())).validate(
+        post.id), data='{}', content_type='application/vnd.api+json').validate(
             404, RelationshipNotFoundError)
 
 
@@ -111,9 +111,9 @@ def test_409_on_to_one_with_incompatible_model(post, comment, client):
                      409, ValidationError)
 
 
-def test_409_on_to_many_with_incompatible_model(user, post, client):
-    payload = {'data': [{'type': 'users', 'id': str(user.id)}]}
-    client.patch('/api/users/{}/relationships/posts/'.format(
+def test_409_on_to_many_with_incompatible_model(post, client):
+    payload = {'data': [{'type': 'posts', 'id': str(post.id)}]}
+    client.patch('/api/posts/{}/relationships/author/'.format(
         post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(

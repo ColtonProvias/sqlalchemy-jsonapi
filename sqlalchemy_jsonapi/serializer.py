@@ -2,10 +2,12 @@ from enum import Enum
 from inflection import pluralize, underscore
 from sqlalchemy.orm.interfaces import MANYTOONE
 from sqlalchemy.util.langhelpers import iterate_attributes
+from sqlalchemy.exc import IntegrityError
+import inspect
 
 from .errors import (PermissionDeniedError, RelationshipNotFoundError,
                      ResourceNotFoundError, ResourceTypeNotFoundError,
-                     ToManyExpectedError)
+                     ToManyExpectedError, NotSortableError, BadRequestError, ValidationError, InvalidTypeForEndpointError, MissingTypeError, NotAnAttributeError, RelatedResourceNotFoundError)
 
 
 class AttributeActions(Enum):
@@ -74,28 +76,33 @@ def get_permission_test(model, field, permission):
 
 
 def inject_model(fn):
-    def wrapped(*args, **kwargs):
-        if args[2] not in args[0].models.keys():
-            return ResourceTypeNotFoundError()
-        args = list(args)
-        args[2] = args[0].models[args[2]]
-        return fn(*args, **kwargs)
+    def wrapped(serializer, session, data, params):
+        api_type = params.pop('api_type')
+        if api_type not in serializer.models.keys():
+            raise ResourceTypeNotFoundError(api_type)
+        model = serializer.models[api_type]
+        if len(inspect.getargspec(fn)[0]) == 4:
+            return fn(serializer, session, data, model)
+        else:
+            return fn(serializer, session, data, model, params)
 
     return wrapped
 
 
 def inject_resource(permission):
     def wrapper(fn):
-        def wrapped(*args, **kwargs):
-            instance = args[1].query(args[2]).get(args[3])
+        def wrapped(serializer, session, data, model, params):
+            obj_id = params.pop('obj_id')
+            instance = session.query(model).get(obj_id)
             if not instance:
-                return ResourceNotFoundError()
-            test = get_permission_test(args[2], None, permission)
+                raise ResourceNotFoundError(model, obj_id)
+            test = get_permission_test(model, None, permission)
             if not test(instance):
-                return PermissionDeniedError()
-            args = list(args)
-            args[3] = instance
-            return fn(*args, **kwargs)
+                raise PermissionDeniedError(permission, instance)
+            if len(inspect.getargspec(fn)[0]) == 5:
+                return fn(serializer, session, data, model, instance)
+            else:
+                return fn(serializer, session, data, model, instance, params)
 
         return wrapped
 
@@ -104,16 +111,15 @@ def inject_resource(permission):
 
 def inject_relationship(permission):
     def wrapper(fn):
-        def wrapped(*args, **kwargs):
-            if args[4] not in args[2].__mapper__.relationships.keys():
-                return RelationshipNotFoundError()
-            relationship = args[2].__mapper__.relationships[args[4]]
-            perm = get_permission_test(args[2], args[4], permission)
-            if not perm(args[3]):
-                return PermissionDeniedError()
-            args = list(args)
-            args[4] = relationship
-            return fn(*args, **kwargs)
+        def wrapped(serializer, session, data, model, instance, params):
+            rel_key = params.pop('relationship')
+            if rel_key not in model.__mapper__.relationships.keys():
+                raise RelationshipNotFoundError(model, instance, rel_key)
+            relationship = model.__mapper__.relationships[rel_key]
+            perm = get_permission_test(model, rel_key, permission)
+            if not perm(instance):
+                raise PermissionDeniedError(permission, relationship)
+            return fn(serializer, session, data, model, instance, relationship)
 
         return wrapped
 
@@ -174,11 +180,20 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.DELETE)
-    def delete_relationship(self, session, model, resource, relationship,
-                            json_data):
+    def delete_relationship(self, session, json_data, model, resource, relationship):
         if relationship.direction == MANYTOONE:
-            return ToManyExpectedError()
+            return ToManyExpectedError(model, resource, relationship)
         response = JSONAPIResponse()
+        response.data = {'data': []}
+        session.add(resource)
+        rel = getattr(resource, relationship.key)
+        for item in json_data['data']:
+            item = session.query(self.models[item['type']]).get(item['id'])
+            rel.remove(item)
+        session.commit()
+        session.refresh(resource)
+        for item in getattr(resource, relationship.key):
+            response.data['data'].append({'type': item.__jsonapi_type__, 'id': item.id})
         return response
 
     def _check_instance_relationships_for_delete(self, instance):
@@ -235,6 +250,24 @@ class JSONAPI(object):
             if remote:
                 ret[local].append(remote)
         return ret
+
+    def _parse_page(self, query):
+        args = {k[5:-1]: v for k, v in query.items() if k.startswith('page[')}
+        if {'number', 'size'} == set(args.keys()):
+            if not args['number'].isdecimal() or not args['size'].isdecimal():
+                raise BadRequestError('Page query parameters must be integers')
+            number = int(args['number'])
+            size = int(args['size'])
+            start = number * size
+            return start, start + size - 1
+        if {'limit', 'offset'} == set(args.keys()):
+            if not args['limit'].isdecimal() or not args['offset'].isdecimal():
+                raise BadRequestError('Page query parameters must be integers')
+            limit = int(args['limit'])
+            offset = int(args['offset'])
+            return offset, offset + limit - 1
+        return 0, None
+
 
     def _build_full_resource(self, instance, include, fields):
         to_ret = {
@@ -303,7 +336,7 @@ class JSONAPI(object):
         return to_ret
 
     @inject_model
-    def get_collection(self, session, model, query):
+    def get_collection(self, session, query, model):
         include = self._parse_include(query.get('include', '').split(','))
         fields = self._parse_fields(query)
         response = JSONAPIResponse()
@@ -311,8 +344,32 @@ class JSONAPI(object):
         included = {}
         view_perm = get_permission_test(model, None, Permissions.VIEW)
         collection = session.query(model)
+        sorts = query.get('sort', '').split(',')
+        order_by = []
+        for attr in sorts:
+            if attr == '':
+                break
+            attr_name, is_asc = [attr[1:], False] if attr[0] == '-' else [attr,
+                                                                          True]
+            if attr_name not in model.__mapper__.all_orm_descriptors.keys(
+            ) or not hasattr(
+                    model,
+                    attr_name) or attr_name in model.__mapper__.relationships.keys(
+                    ):
+                return NotSortableError(model, attr_name)
+            attr = getattr(model, attr_name)
+            if not hasattr(attr, 'asc'):
+                return NotSortableError(model, attr_name)
+            order_by.append(attr.asc() if is_asc else attr.desc())
+        if len(order_by) > 0:
+            collection = collection.order_by(*order_by)
+        pos = -1
+        start, end = self._parse_page(query)
         for instance in collection:
             if not view_perm(instance):
+                continue
+            pos += 1
+            if end is not None and (pos < start or pos > end):
                 continue
             built = self._build_full_resource(instance, include, fields)
             included.update(built.pop('included'))
@@ -322,26 +379,33 @@ class JSONAPI(object):
 
     @inject_model
     @inject_resource(Permissions.VIEW)
-    def get_resource(self, session, model, resource, query):
+    def get_resource(self, session, query, model, resource):
         include = self._parse_include(query.get('include', '').split(','))
         fields = self._parse_fields(query)
         response = JSONAPIResponse()
         built = self._build_full_resource(resource, include, fields)
-        response.data['included'] = list(built.pop('built').values())
+        response.data['included'] = list(built.pop('included').values())
         response.data['data'] = built
         return response
 
     @inject_model
     @inject_resource(Permissions.VIEW)
     @inject_relationship(Permissions.VIEW)
-    def get_related(self, session, model, resource, relationship_key, query):
+    def get_related(self, session, query, model, resource, relationship):
         response = JSONAPIResponse()
+        if relationship.direction == MANYTOONE:
+            related = getattr(resource, relationship.key)
+            response.data['data'] = {'type': related.__jsonapi_type__, 'id': related.id}
+        else:
+            response.data['data'] = []
+            for related in getattr(resource, relationship.key):
+                response.data['data'].append({'type': related.__jsonapi_type__, 'id': related.id})
         return response
 
     @inject_model
     @inject_resource(Permissions.VIEW)
     @inject_relationship(Permissions.VIEW)
-    def get_relationship(self, session, model, resource, relationship, query):
+    def get_relationship(self, session, query, model, resource, relationship):
         response = JSONAPIResponse()
         if relationship.direction == MANYTOONE:
             related = getattr(resource, relationship.key)
@@ -370,9 +434,51 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.EDIT)
-    def patch_relationship(self, session, model, resource, relationship_key,
-                           json_data):
+    def patch_relationship(self, session, json_data, model, resource, relationship):
         response = JSONAPIResponse()
+        session.add(resource)
+        try:
+            if relationship.direction == MANYTOONE:
+                if not isinstance(json_data['data'], dict) and json_data['data'] != None:
+                    raise ValidationError('Provided data must be a hash.')
+                if json_data['data'] == None:
+                    setattr(resource, relationship.key, None)
+                else:
+                    to_relate = session.query(self.models[json_data['data']['type']]).get(json_data['data']['id'])
+                    setattr(resource, relationship.key, to_relate)
+            else:
+                if not isinstance(json_data['data'], list):
+                    raise ValidationError('Provided data must be an array.')
+                rel = getattr(resource, relationship.key)
+                for item in rel:
+                    rel.remove(item)
+                for item in json_data['data']:
+                    to_relate = session.query(self.models[item['type']]).get(item['id'])
+                    if not to_relate:
+                        raise ResourceNotFoundError(self.models[item['type']], item['id'])
+                    rel.append(to_relate)
+            session.commit()
+        except KeyError:
+            raise ValidationError('Incompatible Type')
+        if relationship.direction == MANYTOONE:
+            related = getattr(resource, relationship.key)
+            if related is None:
+                response.data = {'data': None}
+            else:
+                response.data = {
+                    'data': {
+                        'id': related.id,
+                        'type': related.__jsonapi_type__
+                    }
+                }
+        else:
+            related = getattr(resource, relationship.key)
+            response.data = {'data': []}
+            for item in related:
+                response.data['data'].append({
+                    'id': item.id,
+                    'type': item.__jsonapi_type__
+                })
         return response
 
     @inject_model
@@ -382,11 +488,48 @@ class JSONAPI(object):
         return response
 
     @inject_model
-    def post_collection(self, session, model, query_string):
+    def post_collection(self, session, data, model):
+        if 'data' not in data.keys():
+            raise BadRequestError('Must have a top-level data key')
+        if 'type' not in data['data'].keys():
+            raise MissingTypeError()
+        if data['data']['type'] != model.__jsonapi_type__:
+            raise InvalidTypeForEndpointError(model.__jsonapi_type__, data['data']['type'])
         perm = get_permission_test(model, None, Permissions.CREATE)
         if not perm(model):
-            return PermissionDeniedError()
+            return PermissionDeniedError(Permissions.CREATE, model)
+        instance = model()
+        try:
+            if 'id' in data['data'].keys():
+                instance.id = data['data']['id']
+
+            if 'attributes' in data['data'].keys():
+                for key, value in data['data']['attributes'].items():
+                    if key not in model.__mapper__.all_orm_descriptors.keys():
+                        raise NotAnAttributeError(model, key)
+                    setattr(instance, key, value)
+
+            if 'relationships' in data['data'].keys():
+                for key, value in data['data']['relationships'].items():
+                    if isinstance(value['data'], list):
+                        for related in value['data']:
+                            related = session.query(self.models[related['type']]).get(related['id'])
+                            getattr(instance, key).append(related)
+                    else:
+                        related = session.query(self.models[value['data']['type']]).get(value['data']['id'])
+                        setattr(instance, key, related)
+
+            session.add(instance)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            raise ValidationError(str(e.orig))
+        except AssertionError as e:
+            raise ValidationError(e.msg)
         response = JSONAPIResponse()
+        built = self._build_full_resource(instance, {}, {})
+        built.pop('included')
+        response.data['data'] = built
         response.status_code = 201
         return response
 

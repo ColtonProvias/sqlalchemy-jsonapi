@@ -67,22 +67,22 @@ def test_200_sorted_response(bunch_of_posts, client):
 def test_200_descending_sorted_response(bunch_of_posts, client):
     response = client.get('/api/posts/?sort=-title').validate(200)
     title_list = [x['attributes']['title'] for x in response.json_data['data']]
-    assert sorted(title_list, None, True) == title_list
+    assert sorted(title_list, key=None, reverse=True) == title_list
 
 
 def test_200_sorted_response_with_multiple_criteria(bunch_of_posts, client):
-    response = client.get('/api/posts/?sort=title,-created_at').validate(200)
+    response = client.get('/api/posts/?sort=title,-created').validate(200)
     title_list = [x['attributes']['title'] for x in response.json_data['data']]
-    assert sorted(title_list, None, True) == title_list
+    assert sorted(title_list, key=None, reverse=False) == title_list
 
 
-def test_400_when_given_relationship_for_sorting(client):
-    client.get('/api/posts/?sort=author').validate(400, NotSortableError)
+def test_409_when_given_relationship_for_sorting(bunch_of_posts, client):
+    client.get('/api/posts/?sort=author').validate(409, NotSortableError)
 
 
-def test_400_when_given_a_missing_field_for_sorting(client):
+def test_409_when_given_a_missing_field_for_sorting(bunch_of_posts, client):
     client.get('/api/posts/?sort=never_gonna_give_you_up').validate(
-        400, NotSortableError)
+        409, NotSortableError)
 
 
 def test_200_paginated_response_by_page(bunch_of_posts, client):
@@ -97,23 +97,10 @@ def test_200_paginated_response_by_offset(bunch_of_posts, client):
     assert len(response.json_data['data']) == 5
 
 
-def test_409_when_pagination_is_out_of_range(bunch_of_posts, client):
-    client.get('/api/posts/?page[offset]=999999&page[limit]=5').validate(
-        409, OutOfBoundsError)
+def test_200_when_pagination_is_out_of_range(bunch_of_posts, client):
+    client.get('/api/posts/?page[offset]=999999&page[limit]=5').validate(200)
 
 
-def test_400_when_provided_crap_data_for_pagination(client):
+def test_400_when_provided_crap_data_for_pagination(bunch_of_posts, client):
     client.get('/api/posts/?page[offset]=5&page[limit]=crap').validate(
         400, BadRequestError)
-
-
-def test_200_basic_equivalence_filtering(bunch_of_posts, client):
-    response = client.get('/api/posts/?filter[is_published]=true').validate(
-        200)
-    assert len(response.json_data['data']) > 0
-
-
-def test_200_filter_returns_nada(bunch_of_posts, client):
-    response = client.get('/api/posts/?filter[is_published]=false').validate(
-        200)
-    assert len(response.json_data['data']) == 0

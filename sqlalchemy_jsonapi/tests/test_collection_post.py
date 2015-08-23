@@ -2,15 +2,17 @@ import json
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, IDAlreadyExistsError, InvalidTypeForEndpointError,
-    MissingTypeError, NotAFieldError, PermissionDeniedError, ValidationError)
+    MissingTypeError, NotAFieldError, PermissionDeniedError, ValidationError, MissingContentTypeError, NotAnAttributeError)
+from faker import Faker
 
+fake = Faker()
 
 def test_200_resource_creation(client):
     payload = {
         'data': {
             'type': 'users',
             'attributes': {
-                'username': 'my_user',
+                'username': fake.user_name(),
                 'email': 'user@example.com',
                 'password': 'password'
             }
@@ -20,9 +22,6 @@ def test_200_resource_creation(client):
                            data=json.dumps(payload),
                            content_type='application/vnd.api+json').validate(
                                201)
-    assert response.json_data['data']['links']['self'] == response.headers[
-        'Location'
-    ]
     assert response.json_data['data']['type'] == 'users'
     user_id = response.json_data['data']['id']
     response = client.get('/api/users/{}/'.format(user_id)).validate(200)
@@ -47,13 +46,10 @@ def test_200_resource_creation_with_relationships(user, client):
             }
         }
     }
-    response = client.post('/api/posts',
+    response = client.post('/api/posts/',
                            data=json.dumps(payload),
                            content_type='application/vnd.api+json').validate(
                                201)
-    assert response.json_data['data']['links']['self'] == response.headers[
-        'Location'
-    ]
     assert response.json_data['data']['type'] == 'posts'
     post_id = response.json_data['data']['id']
     response = client.get('/api/posts/{}/'.format(post_id)).validate(200)
@@ -63,8 +59,13 @@ def test_200_resource_creation_with_relationships(user, client):
 
 
 def test_403_when_access_is_denied(client):
+    payload = {
+        'data': {
+            'type': 'logs'
+        }
+    }
     client.post('/api/logs/',
-                data='{}',
+                data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
                     403, PermissionDeniedError)
 
@@ -84,7 +85,7 @@ def test_409_when_id_already_exists(user, client):
     client.post('/api/users/',
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
-                    409, IDAlreadyExistsError)
+                    409, ValidationError)
 
 
 def test_409_when_type_doesnt_match_endpoint(client):
@@ -95,8 +96,8 @@ def test_409_when_type_doesnt_match_endpoint(client):
                     409, InvalidTypeForEndpointError)
 
 
-def test_400_when_missing_content_type(client):
-    client.post('/api/users/', data='{}').validate(409, BadRequestError)
+def test_409_when_missing_content_type(client):
+    client.post('/api/users/', data='{}').validate(409, MissingContentTypeError)
 
 
 def test_409_when_missing_type(client):
@@ -147,4 +148,4 @@ def test_409_for_wrong_field_name(client):
     client.post('/api/users/',
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
-                    409, NotAFieldError)
+                    409, NotAnAttributeError)

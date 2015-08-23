@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy_jsonapi.tests.app import db as db_
 from sqlalchemy_jsonapi.tests.app import app, User, Post, Comment, Log
 from faker import Faker
+from uuid import uuid4
 
 Session = sessionmaker()
 
@@ -39,7 +40,7 @@ def db(flask_app):
 
 
 @pytest.yield_fixture(scope='function')
-def session(db):
+def session(request, db):
     """Create the transaction for each function so we don't rebuild."""
     connection = db.engine.connect()
     transaction = connection.begin()
@@ -53,6 +54,7 @@ def session(db):
 
 class TestingResponse(Response):
     def validate(self, status_code, error=None):
+        print(self.data)
         assert self.status_code == status_code
         assert self.headers['Content-Type'] == 'application/vnd.api+json'
         if status_code != 204:
@@ -76,9 +78,9 @@ def client(flask_app):
 
 @pytest.fixture
 def user(session):
-    new_user = User(username=fake.user_name(),
-                    email=fake.email(),
-                    password=fake.sentence())
+    new_user = User(email=fake.email(),
+                    password=fake.sentence(),
+                    username=fake.user_name())
     session.add(new_user)
     session.commit()
     return new_user
@@ -88,8 +90,8 @@ def user(session):
 def post(user, session):
     new_post = Post(author=user,
                     title=fake.sentence(),
-                    is_published=True,
-                    content=fake.paragraph())
+                    content=fake.paragraph(),
+                    is_published=True)
     session.add(new_post)
     session.commit()
     return new_post
@@ -99,8 +101,8 @@ def post(user, session):
 def unpublished_post(user, session):
     new_post = Post(author=user,
                     title=fake.sentence(),
-                    is_published=False,
-                    content=fake.paragraph())
+                    content=fake.paragraph(),
+                    is_published=False)
     session.add(new_post)
     session.commit()
     return new_post
@@ -108,20 +110,20 @@ def unpublished_post(user, session):
 
 @pytest.fixture
 def bunch_of_posts(user, session):
-    for x in range(10):
-        post = Post(author=user,
-                    title=fake.sentence(),
-                    is_published=True,
-                    content=fake.paragraph())
-        post.comments.append(Comment(author=user, content=fake.paragraph()))
-        session.add(post)
-
+    for x in range(30):
+        new_post = Post(author=user,
+                        title=fake.sentence(),
+                        content=fake.paragraph(),
+                        is_published=fake.boolean())
+        session.add(new_post)
+        new_post.comments.append(Comment(author=user,
+                                         content=fake.paragraph()))
     session.commit()
 
 
 @pytest.fixture
 def comment(user, post, session):
-    new_comment = Comment(post=post, author=user, content=fake.paragraph())
+    new_comment = Comment(author=user, post=post, content=fake.paragraph())
     session.add(new_comment)
     session.commit()
     return new_comment

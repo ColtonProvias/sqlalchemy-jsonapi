@@ -1,12 +1,18 @@
 import json
 from uuid import uuid4
 
-from sqlalchemy_jsonapi.errors import (BadRequestError, PermissionDeniedError,
-                                       ResourceNotFoundError)
+from sqlalchemy_jsonapi.errors import (
+    BadRequestError, PermissionDeniedError, ResourceNotFoundError,
+    RelatedResourceNotFoundError, NotAFieldError)
 
 
-def test_200():
-    raise NotImplementedError
+def test_200(client, post):
+    payload = {}
+    response = client.patch('/api/patch/{}/'.format(post.id),
+                            data=json.dumps(payload),
+                            content_type='application/vnd.api+json').validate(
+                                200)
+    assert response.json_data['id'] == None
 
 
 def test_400_missing_type(post, client):
@@ -23,12 +29,46 @@ def test_404_resource_not_found(client):
                      404, ResourceNotFoundError)
 
 
-def test_404_related_resource_not_found():
-    raise NotImplementedError
+def test_404_related_resource_not_found(client, post):
+    payload = {
+        'data': {
+            'type': 'posts',
+            'id': post.id,
+            'relationships': {
+                'author': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(uuid4())
+                    }
+                }
+            }
+        }
+    }
+    client.patch('/api/posts/{}/'.format(post.id),
+                 data=json.dumps(payload),
+                 content_type='application/vnd.api+json').validate(
+                     400, RelatedResourceNotFoundError)
 
 
-def test_400_field_not_found():
-    raise NotImplementedError
+def test_400_field_not_found(client, post):
+    payload = {
+        'data': {
+            'type': 'posts',
+            'id': post.id,
+            'relationships': {
+                'authors': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(uuid4())
+                    }
+                }
+            }
+        }
+    }
+    client.patch('/api/posts/{}/'.format(post.id),
+                 data=json.dumps(payload),
+                 content_type='application/vnd.api+json').validate(
+                     400, NotAFieldError)
 
 
 def test_409_type_mismatch_to_one():

@@ -63,8 +63,8 @@ class User(Timestamp, db.Model):
         Here's hoping nobody submits something in unicode that is 31 characters
         long!!
         """
-        assert len(username) >= 5 and len(
-            username) <= 30, 'Must be 5 to 30 characters long.'
+        assert len(username) >= 4 and len(
+            username) <= 30, 'Must be 4 to 30 characters long.'
         return username
 
     @validates('password')
@@ -99,7 +99,7 @@ class Post(Timestamp, db.Model):
     slug = Column(Unicode(100))
     content = Column(UnicodeText, nullable=False)
     is_published = Column(Boolean, default=False)
-    author_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
+    author_id = Column(UUIDType, ForeignKey('users.id'))
 
     author = relationship('User',
                           lazy='joined',
@@ -118,6 +118,10 @@ class Post(Timestamp, db.Model):
         """ Hide unpublished. """
         return self.is_published
 
+    @permission_test(Permissions.DELETE, 'logs')
+    def prevent_deletion_of_logs(self):
+        return False
+
 
 class Comment(Timestamp, db.Model):
     """Comment for each Post."""
@@ -125,7 +129,7 @@ class Comment(Timestamp, db.Model):
     __tablename__ = 'comments'
 
     id = Column(UUIDType, default=uuid4, primary_key=True)
-    post_id = Column(UUIDType, ForeignKey('posts.id'), nullable=False)
+    post_id = Column(UUIDType, ForeignKey('posts.id'))
     author_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
     content = Column(UnicodeText, nullable=False)
 
@@ -153,6 +157,14 @@ class Log(Timestamp, db.Model):
                         lazy='joined',
                         backref=backref('logs',
                                         lazy='dynamic'))
+
+    @permission_test(Permissions.CREATE)
+    def block_create(cls):
+        return False
+
+    @permission_test(Permissions.EDIT)
+    def block_edit(cls):
+        return False
 
 
 api = FlaskJSONAPI(app, db)

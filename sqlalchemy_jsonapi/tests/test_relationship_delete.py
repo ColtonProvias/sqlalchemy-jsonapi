@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, PermissionDeniedError, RelationshipNotFoundError,
-    ResourceNotFoundError, ToManyExpectedError)
+    ResourceNotFoundError, ToManyExpectedError, MissingContentTypeError)
 
 
 def test_200_on_deletion_from_to_many(comment, client):
@@ -15,7 +15,7 @@ def test_200_on_deletion_from_to_many(comment, client):
         content_type='application/vnd.api+json').validate(200)
     for item in response.json_data['data']:
         assert {'id', 'type'} == set(item.keys())
-    assert payload['data']['id'] not in [str(x['id'])
+    assert payload['data'][0]['id'] not in [str(x['id'])
                                          for x in response.json_data['data']]
 
 
@@ -39,7 +39,7 @@ def test_403_on_permission_denied(user, client):
         user.id),
                   data='{}',
                   content_type='application/vnd.api+json').validate(
-                      404, PermissionDeniedError)
+                      403, PermissionDeniedError)
 
 
 def test_409_on_to_one_provided(post, client):
@@ -47,10 +47,10 @@ def test_409_on_to_one_provided(post, client):
         post.id),
                   data='{}',
                   content_type='application/vnd.api+json').validate(
-                      404, ToManyExpectedError)
+                      409, ToManyExpectedError)
 
 
-def test_400_missing_content_type_header(post, client):
+def test_409_missing_content_type_header(post, client):
     client.delete('/api/posts/{}/relationships/comment/'.format(
         post.id),
-                  data='{}').validate(404, BadRequestError)
+                  data='{}').validate(409, MissingContentTypeError)
