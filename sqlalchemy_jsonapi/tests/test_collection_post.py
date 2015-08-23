@@ -1,9 +1,8 @@
 import json
 
 from sqlalchemy_jsonapi.errors import (
-    InvalidTypeForEndpointError,
-    MissingTypeError, PermissionDeniedError, ValidationError,
-    MissingContentTypeError, NotAnAttributeError)
+    InvalidTypeForEndpointError, MissingTypeError, PermissionDeniedError,
+    ValidationError, MissingContentTypeError, NotAnAttributeError)
 from faker import Faker
 
 fake = Faker()

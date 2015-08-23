@@ -3,8 +3,8 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, PermissionDeniedError, ResourceNotFoundError,
-    RelatedResourceNotFoundError, RelationshipNotFoundError,
-    ValidationError, MissingTypeError)
+    RelatedResourceNotFoundError, RelationshipNotFoundError, ValidationError,
+    MissingTypeError)
 
 
 def test_200(client, post, user):

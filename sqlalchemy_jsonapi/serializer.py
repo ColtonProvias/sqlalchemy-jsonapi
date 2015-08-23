@@ -5,7 +5,6 @@ Colton J. Provias
 MIT License
 """
 
-
 import inspect
 
 from enum import Enum
@@ -34,7 +33,7 @@ class RelationshipActions(Enum):
 
     GET = 10
     APPEND = 11
-    REPLACE = 12
+    SET = 12
     DELETE = 13
 
 
@@ -106,7 +105,6 @@ class PermissionTest(object):
         fn.__jsonapi_check_permission__ = self.permission
         return fn
 
-
 #: More consistent name for the decorators
 permission_test = PermissionTest
 
@@ -131,8 +129,9 @@ def get_permission_test(model, field, permission, instance=None):
     :param field: Name of the field or None for instance/model-wide
     :param permission: Permission to check for
     """
-    perm_field = model.__jsonapi_permissions__.get(field, {})
-    return perm_field.get(permission, lambda x: True)
+    return model.__jsonapi_permissions__\
+        .get(field, {})\
+        .get(permission, lambda x: True)
 
 
 def check_permission(instance, field, permission):
@@ -144,10 +143,33 @@ def check_permission(instance, field, permission):
     :param field: The field name to check or None for instance
     :param permission: The permission to check
     """
-    perm = get_permission_test(instance, field, permission)
-    if not perm(instance):
+    if not get_permission_test(instance, field, permission)(instance):
         raise PermissionDeniedError(permission, instance, instance, field)
 
+
+def get_attr_desc(instance, attribute, action):
+    descs = instance.__jsonapi_attribute_descriptors__.get(attribute, {})
+    if action == AttributeActions.GET:
+        check_permission(instance, attribute, Permissions.VIEW)
+        return descs.get(action, lambda x: getattr(x, attribute))
+    check_permission(instance, attribute, Permissions.EDIT)
+    return descs.get(action, lambda x, v: setattr(x, v))
+
+
+def get_rel_desc(instance, key, action):
+    descs = instance.__jsonapi_rel_desc__.get(key, {})
+    if action == RelationshipActions.GET:
+        check_permission(instance, key, Permissions.VIEW)
+        return descs.get(action, lambda x: getattr(x, key))
+    elif action == RelationshipActions.APPEND:
+        check_permission(instance, key, Permissions.CREATE)
+        return descs.get(action, lambda x, v: getattr(x, key).append(v))
+    elif action == RelationshipActions.SET:
+        check_permission(instance, key, Permissions.EDIT)
+        return descs.get(action, lambda x, v: setattr(x, key, v))
+    else:
+        check_permission(instance, key, Permissions.DELETE)
+        return descs.get(action, lambda x, v: getattr(x, key).remove(v))
 
 def inject_model(fn):
     """
@@ -155,6 +177,7 @@ def inject_model(fn):
 
     :param fn: Function to decorate
     """
+
     def wrapped(serializer, session, data, params):
         api_type = params.pop('api_type')
         if api_type not in serializer.models.keys():
@@ -174,6 +197,7 @@ def inject_resource(permission):
 
     :param permission: Permission to check for
     """
+
     def wrapper(fn):
         def wrapped(serializer, session, data, model, params):
             obj_id = params.pop('obj_id')
@@ -197,6 +221,7 @@ def inject_relationship(permission):
 
     :param permission: Permission to check for
     """
+
     def wrapper(fn):
         def wrapped(serializer, session, data, model, instance, params):
             rel_key = params.pop('relationship')
@@ -236,10 +261,7 @@ class JSONAPI(object):
 
             for prop_name, prop_value in iterate_attributes(model):
                 if hasattr(prop_value, '__jsonapi_desc_for_attrs__'):
-                    defaults = {
-                        'get': None,
-                        'set': None
-                    }
+                    defaults = {'get': None, 'set': None}
                     descriptors = model.__jsonapi_attribute_descriptors__
                     for attribute in prop_value.__jsonapi_desc_for_attrs__:
                         descriptors.setdefault(attribute, defaults)
@@ -307,35 +329,44 @@ class JSONAPI(object):
         :param instance: The instance to render
         """
         check_permission(instance, None, Permissions.VIEW)
-        return {
-            'type': instance.__jsonapi_type__,
-            'id': instance.id
-        }
+        return {'type': instance.__jsonapi_type__, 'id': instance.id}
 
     def _render_full_resource(self, instance, include, fields):
+        """
+        Generate a representation of a full resource to match JSON API spec.
+
+        :param instance: The instance to serialize
+        :param include: Dictionary of relationships to include
+        :param fields: Dictionary of fields to filter
+        """
+        api_type = instance.__jsonapi_type__
+        orm_desc_keys = instance.__mapper__.all_orm_descriptors.keys()
         to_ret = {
             'id': instance.id,
-            'type': instance.__jsonapi_type__,
+            'type': api_type,
             'attributes': {},
             'relationships': {},
             'included': {}
         }
         attrs_to_ignore = {'__mapper__', 'id'}
-        local_fields = fields.get(
-            instance.__jsonapi_type__,
-            instance.__mapper__.all_orm_descriptors.keys())
+        local_fields = fields.get(api_type, orm_desc_keys)
+
         for key, relationship in instance.__mapper__.relationships.items():
             attrs_to_ignore |= set(relationship.local_columns) | {key}
+
             try:
-                check_permission(instance, key, Permissions.VIEW)
+                desc = get_rel_desc(instance, key, RelationshipActions.GET)
             except PermissionDeniedError:
                 continue
-            related = getattr(instance, key)
+            related = desc(instance)
+
             if relationship.direction == MANYTOONE:
                 perm = get_permission_test(related, None, Permissions.VIEW)
+
                 if related is None or not perm(related):
                     if key in local_fields:
                         to_ret['relationships'][key] = {'data': None}
+
                 else:
                     if key in local_fields:
                         to_ret['relationships'][key] = {
@@ -344,40 +375,49 @@ class JSONAPI(object):
                                 'type': related.__jsonapi_type__
                             }
                         }
+
                     if key in include.keys():
-                        built = self._render_full_resource(
-                            related, self._parse_include(include[key]), fields)
+                        new_include = self._parse_include(include[key])
+                        built = self._render_full_resource(related,
+                                                           new_include,
+                                                           fields)
                         included = built.pop('included')
                         to_ret['included'].update(included)
-                        to_ret['included'][(related.__jsonapi_type__,
-                                            related.id)] = built
+                        to_ret['included'][(api_type, related.id)] = built
+
             else:
                 if key in local_fields:
                     to_ret['relationships'][key] = {'data': []}
+
                 for item in related:
                     try:
                         check_permission(item, None, Permissions.VIEW)
                     except PermissionDeniedError:
                         continue
+
                     if key in local_fields:
-                        to_ret['relationships'][key]['data'].append(
-                            {'id': item.id,
-                             'type': item.__jsonapi_type__})
+                        to_ret['relationships'][key]['data'].append({
+                            'id': item.id,
+                            'type': api_type
+                        })
+
                     if key in include.keys():
-                        built = self._render_full_resource(
-                            item, self._parse_include(include[key]), fields)
+                        new_include = self._parse_include(include[key])
+                        built = self._render_full_resource(item,
+                                                           new_include,
+                                                           fields)
                         included = built.pop('included')
                         to_ret['included'].update(included)
-                        to_ret['included'][(item.__jsonapi_type__, item.id
-                                            )] = built
-        for key in set(
-            instance.__mapper__.all_orm_descriptors.keys()) - attrs_to_ignore:
+                        to_ret['included'][(api_type, item.id)] = built
+
+        for key in set(orm_desc_keys) - attrs_to_ignore:
             try:
-                check_permission(instance, key, Permissions.VIEW)
+                desc = get_attr_desc(instance, key, AttributeActions.GET)
+                if key in local_fields:
+                    to_ret['attributes'][key] = desc(instance)
             except PermissionDeniedError:
                 continue
-            if key in local_fields:
-                to_ret['attributes'][key] = getattr(instance, key)
+
         return to_ret
 
     def _check_instance_relationships_for_delete(self, instance):
@@ -386,7 +426,8 @@ class JSONAPI(object):
             check_permission(instance, rel_key, Permissions.EDIT)
             if rel.cascade.delete:
                 if rel.direction == MANYTOONE:
-                    self._check_instance_relationships_for_delete(getattr(instance, rel_key))
+                    self._check_instance_relationships_for_delete(getattr(
+                        instance, rel_key))
                 else:
                     instances = getattr(instance, rel_key)
                     for to_check in instances:
@@ -435,8 +476,8 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.DELETE)
-    def delete_relationship(self, session, data, model, resource,
-                            relationship):
+    def delete_relationship(self, session, data, model, resource, relationship
+                            ):
         self._check_json_data(data)
         if relationship.direction == MANYTOONE:
             return ToManyExpectedError(model, resource, relationship)
@@ -446,7 +487,8 @@ class JSONAPI(object):
         rel = getattr(resource, relationship.key)
         reverse_side = relationship.back_populates
         for item in data['data']:
-            item = self._fetch_resource(session, item['type'], item['id'], Permissions.EDIT)
+            item = self._fetch_resource(session, item['type'], item['id'],
+                                        Permissions.EDIT)
             if reverse_side:
                 reverse_rel = getattr(item, reverse_side)
                 if reverse_rel.direction == MANYTOONE:
