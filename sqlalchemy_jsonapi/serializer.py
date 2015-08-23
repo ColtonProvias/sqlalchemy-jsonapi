@@ -440,10 +440,12 @@ class JSONAPI(object):
 
         :param instance: The instance to check the relationships of.
         """
-        check_permission(instance, None, Permissions.DELTE)
+        check_permission(instance, None, Permissions.DELETE)
         for rel_key, rel in instance.__mapper__.relationships.items():
             check_permission(instance, rel_key, Permissions.EDIT)
+
             if rel.cascade.delete:
+
                 if rel.direction == MANYTOONE:
                     related = getattr(instance, rel_key)
                     self._check_instance_relationships_for_delete(related)
@@ -462,9 +464,12 @@ class JSONAPI(object):
             k: v
             for k, v in query.items() if k.startswith('fields[')
         }
+
         fields = {}
+
         for k, v in field_args.items():
             fields[k[7:-1]] = v
+
         return fields
 
     def _parse_include(self, include):
@@ -480,9 +485,11 @@ class JSONAPI(object):
             else:
                 local = item
                 remote = None
+
             ret.setdefault(local, [])
             if remote:
                 ret[local].append(remote)
+
         return ret
 
     def _parse_page(self, query):
@@ -492,49 +499,83 @@ class JSONAPI(object):
         :param query: Dict of query args
         """
         args = {k[5:-1]: v for k, v in query.items() if k.startswith('page[')}
+
         if {'number', 'size'} == set(args.keys()):
             if not args['number'].isdecimal() or not args['size'].isdecimal():
                 raise BadRequestError('Page query parameters must be integers')
+
             number = int(args['number'])
             size = int(args['size'])
             start = number * size
+
             return start, start + size - 1
+
         if {'limit', 'offset'} == set(args.keys()):
             if not args['limit'].isdecimal() or not args['offset'].isdecimal():
                 raise BadRequestError('Page query parameters must be integers')
+
             limit = int(args['limit'])
             offset = int(args['offset'])
+
             return offset, offset + limit - 1
+
         return 0, None
 
     @inject_model
     @inject_resource(Permissions.EDIT)
     @inject_relationship(Permissions.DELETE)
-    def delete_relationship(self, session, data, model, resource, relationship
-                            ):
+    def delete_relationship(self, session, data, model, resource,
+                            relationship):
+        """
+        Delete a resource or multiple resources from a to-many relationship.
+
+        :param session: SQLAlchemy session
+        :param data: JSON data provided with the request
+        :param api_type: The resource type
+        :param obj_id: Resource ID
+        :param relationship: Relationship name
+        """
         self._check_json_data(data)
+
         if relationship.direction == MANYTOONE:
             return ToManyExpectedError(model, resource, relationship)
+
         response = JSONAPIResponse()
         response.data = {'data': []}
+
         session.add(resource)
-        rel = getattr(resource, relationship.key)
+
+        remove = get_rel_desc(resource,
+                              relationship.key,
+                              RelationshipActions.DELETE)
         reverse_side = relationship.back_populates
+
         for item in data['data']:
-            item = self._fetch_resource(session, item['type'], item['id'],
+            item = self._fetch_resource(session,
+                                        item['type'],
+                                        item['id'],
                                         Permissions.EDIT)
+
             if reverse_side:
                 reverse_rel = getattr(item, reverse_side)
+
                 if reverse_rel.direction == MANYTOONE:
                     permission = Permissions.EDIT
                 else:
                     permission = Permissions.DELETE
+
                 check_permission(item, reverse_side, permission)
-            rel.remove(item)
+
+            remove(resource, item)
+
         session.commit()
         session.refresh(resource)
-        for item in getattr(resource, relationship.key):
+
+        get = get_rel_desc(resource, relationship.key, RelationshipActions.GET)
+
+        for item in get(resource):
             response.data['data'].append(self._render_short_instance(item))
+
         return response
 
     @inject_model
