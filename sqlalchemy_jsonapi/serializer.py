@@ -595,43 +595,65 @@ class JSONAPI(object):
 
     @inject_model
     def get_collection(self, session, query, model):
+        """
+        Fetch a collection of resources of a specified type.
+
+        :param session: SQLAlchemy session
+        :param data: Dict of query args
+        :param params: Keyword arguments
+        """
         include = self._parse_include(query.get('include', '').split(','))
         fields = self._parse_fields(query)
-        response = JSONAPIResponse()
-        response.data = {'data': []}
         included = {}
-        view_perm = get_permission_test(model, None, Permissions.VIEW)
-        collection = session.query(model)
         sorts = query.get('sort', '').split(',')
         order_by = []
+
+        collection = session.query(model)
+
         for attr in sorts:
             if attr == '':
                 break
-            attr_name, is_asc = [attr[1:], False] if attr[0] == '-' else [attr,
-                                                                          True]
-            if attr_name not in model.__mapper__.all_orm_descriptors.keys(
-            ) or not hasattr(
-                    model,
-                    attr_name) or attr_name in model.__mapper__.relationships.keys(
-                    ):
+
+            attr_name, is_asc = [attr[1:], False]\
+                if attr[0] == '-'\
+                else [attr, True]
+
+            if attr_name not in model.__mapper__.all_orm_descriptors.keys()\
+                    or not hasattr(model, attr_name)\
+                    or attr_name in model.__mapper__.relationships.keys():
                 return NotSortableError(model, attr_name)
+
             attr = getattr(model, attr_name)
             if not hasattr(attr, 'asc'):
                 return NotSortableError(model, attr_name)
+
+            check_permission(model, attr_name, Permissions.VIEW)
+
             order_by.append(attr.asc() if is_asc else attr.desc())
+
         if len(order_by) > 0:
             collection = collection.order_by(*order_by)
+
         pos = -1
         start, end = self._parse_page(query)
+
+        response = JSONAPIResponse()
+        response.data = {'data': []}
+
         for instance in collection:
-            if not view_perm(instance):
+            try:
+                check_permission(instance, None, Permissions.VIEW)
+            except PermissionDeniedError:
                 continue
+
             pos += 1
             if end is not None and (pos < start or pos > end):
                 continue
+
             built = self._render_full_resource(instance, include, fields)
             included.update(built.pop('included'))
             response.data['data'].append(built)
+
         response.data['included'] = list(included.values())
         return response
 
