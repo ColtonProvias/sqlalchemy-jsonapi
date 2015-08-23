@@ -14,7 +14,7 @@ from setuptools import setup
 
 setup(name='SQLAlchemy-JSONAPI',
       version='1.0.0',
-      uri='http://github.com/coltonprovias/sqlalchemy-jsonapi',
+      url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',
       author_email='cj@coltonprovias.com',
@@ -25,10 +25,15 @@ setup(name='SQLAlchemy-JSONAPI',
       include_package_data=True,
       platforms='any',
       install_requires=['SQLAlchemy', 'inflection'],
-      classifiers=
-      ['Environment :: Web Environment', 'Intended Audience :: Developers',
-       'License :: OSI Approved :: BSD License',
-       'Operating System :: OS Independent', 'Programming Language :: Python',
-       'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-       'Topic :: Software Development :: Libraries :: Python'
-       ' Modules'])
+      classifiers=[
+            'Development Status :: 5 - Production/Stable',
+            'Environment :: Web Environment',
+            'Framework :: Flask',
+            'Intended Audience :: Developers',
+            'License :: OSI Approved :: MIT License',
+            'Natural Language :: English',
+            'Operating System :: OS Independent',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Topic :: Software Development :: Libraries :: Python Modules'
+      ])

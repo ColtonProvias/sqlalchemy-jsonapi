@@ -49,13 +49,13 @@ class PermissionDeniedError(BaseError):
     code = 'permission_denied'
     title = 'Permission Denied'
 
-    def __init__(self, permission, model, instance=None, relationship=None):
+    def __init__(self, permission, model, instance=None, field=None):
         tmpl = '{} denied on {}'
         self.detail = tmpl.format(permission.value, model.__jsonapi_type__)
         if instance is not None:
             self.detail += '.' + str(instance.id)
-        if relationship is not None:
-            self.detail += '.' + relationship.key
+        if field is not None:
+            self.detail += '.' + field
 
 
 class InvalidTypeForEndpointError(BaseError):
