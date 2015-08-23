@@ -23,6 +23,20 @@ know, and it's quite useful!
 Attribute Descriptors
 =====================
 
+        from sqlalchemy_jsonapi import attr_descriptor, AttributeActions
+
+        class User(Base):
+            id = Column(UUIDType)
+            # ...
+
+            @attr_descriptor(AttributeActions.GET, 'id')
+            def id_getter(self):
+                return str(self.id)
+
+            @attr_descriptor(AttributeActions.SET, 'id')
+            def id_setter(self, new_id):
+                self.id = UUID(new_id)
+
 Relationship Descriptors
 ========================
 

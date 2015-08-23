@@ -10,11 +10,11 @@ Installation of SQLAlchemy-JSONAPI can be done via pip::
 
     pip install -U sqlalchemy_jsonapi
 
-Attaching to MetaData
-=====================
+Attaching to Declarative Base
+=============================
 
 To initialize the serializer, you first have to attach it to an instance of
-SQLAlchemy's metadata that is connected to your models::
+SQLAlchemy's Declarative Base that is connected to your models::
 
     from sqlalchemy_jsonapi import JSONAPI
 
@@ -29,7 +29,7 @@ SQLAlchemy's metadata that is connected to your models::
         user_id = Column(UUIDType, ForeignKey('users.id'))
         # ...
 
-    serializer = JSONAPI(Base.metadata)
+    serializer = JSONAPI(Base)
 
 Serialization
 =============
@@ -39,8 +39,8 @@ your models.  Let's do a simple collection serialization::
 
     @app.route('/api/users')
     def users_list():
-        serialized = serializer.get(db.session, User, args=request.args)
-        return jsonify(serialized)
+        response = serializer.get_collection(db.session, {}, 'users')
+        return jsonify(response.data)
 
 Deserialization
 ===============
@@ -50,8 +50,8 @@ Deserialization is also quick and easy::
     @app.route('/api/users/<user_id>', methods=['PATCH'])
     def update_user(user_id):
         json_data = request.get_json(force=True)
-        json_response = serializer.patch(db.session, User, user_id, data=json_data)
-        return jsonify(json_response)
+        response = serializer.patch_resource(db.session, json_data, 'users', user_id)
+        return jsonify(response.data)
 
 If you use Flask, this can be automated and simplified via the included Flask
 module.
