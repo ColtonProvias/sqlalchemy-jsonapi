@@ -11,7 +11,7 @@ import inspect
 from enum import Enum
 from inflection import pluralize, underscore
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.interfaces import MANYTOONE, ONETOMANY
+from sqlalchemy.orm.interfaces import MANYTOONE
 from sqlalchemy.util.langhelpers import iterate_attributes
 
 from .errors import (BadRequestError, InvalidTypeForEndpointError,
@@ -136,6 +136,14 @@ def get_permission_test(model, field, permission, instance=None):
 
 
 def check_permission(instance, field, permission):
+    """
+    Check a permission for a given instance or field.  Raises an error if
+    denied.
+
+    :param instance: The instance to check
+    :param field: The field name to check or None for instance
+    :param permission: The permission to check
+    """
     perm = get_permission_test(instance, field, permission)
     if not perm(instance):
         raise PermissionDeniedError(permission, instance, instance, field)
@@ -410,15 +418,6 @@ class JSONAPI(object):
     @inject_relationship(Permissions.DELETE)
     def delete_relationship(self, session, data, model, resource,
                             relationship):
-        """
-        Delete requested items from a to-many relationship.
-
-        :param session: SQLAlchemy session
-        :param data: JSON Request body
-        :param model: Model
-        :param resource: Model instance
-        :param relationship: The relationship
-        """
         self._check_json_data(data)
         if relationship.direction == MANYTOONE:
             return ToManyExpectedError(model, resource, relationship)
