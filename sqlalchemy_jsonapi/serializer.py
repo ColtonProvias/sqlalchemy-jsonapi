@@ -148,6 +148,13 @@ def check_permission(instance, field, permission):
 
 
 def get_attr_desc(instance, attribute, action):
+    """
+    Fetch the appropriate descriptor for the attribute.
+
+    :param instance: Model instance
+    :param attribute: Name of the attribute
+    :param action: AttributeAction
+    """
     descs = instance.__jsonapi_attribute_descriptors__.get(attribute, {})
     if action == AttributeActions.GET:
         check_permission(instance, attribute, Permissions.VIEW)
@@ -157,6 +164,13 @@ def get_attr_desc(instance, attribute, action):
 
 
 def get_rel_desc(instance, key, action):
+    """
+    Fetch the appropriate descriptor for the relationship.
+
+    :param instance: Model instance
+    :param key: Name of the relationship
+    :param action: RelationshipAction
+    """
     descs = instance.__jsonapi_rel_desc__.get(key, {})
     if action == RelationshipActions.GET:
         check_permission(instance, key, Permissions.VIEW)
