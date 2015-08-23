@@ -435,19 +435,29 @@ class JSONAPI(object):
         return to_ret
 
     def _check_instance_relationships_for_delete(self, instance):
+        """
+        Ensure we are authorized to delete this and all cascaded resources.
+
+        :param instance: The instance to check the relationships of.
+        """
         check_permission(instance, None, Permissions.DELTE)
         for rel_key, rel in instance.__mapper__.relationships.items():
             check_permission(instance, rel_key, Permissions.EDIT)
             if rel.cascade.delete:
                 if rel.direction == MANYTOONE:
-                    self._check_instance_relationships_for_delete(getattr(
-                        instance, rel_key))
+                    related = getattr(instance, rel_key)
+                    self._check_instance_relationships_for_delete(related)
                 else:
                     instances = getattr(instance, rel_key)
                     for to_check in instances:
                         self._check_instance_relationships_for_delete(to_check)
 
     def _parse_fields(self, query):
+        """
+        Parse the querystring args for fields.
+
+        :param query: Dict of query args
+        """
         field_args = {
             k: v
             for k, v in query.items() if k.startswith('fields[')
@@ -458,6 +468,11 @@ class JSONAPI(object):
         return fields
 
     def _parse_include(self, include):
+        """
+        Parse the querystring args or parent includes for includes.
+
+        :param include: Dict of query args or includes
+        """
         ret = {}
         for item in include:
             if '.' in item:
@@ -471,6 +486,11 @@ class JSONAPI(object):
         return ret
 
     def _parse_page(self, query):
+        """
+        Parse the querystring args for pagination.
+
+        :param query: Dict of query args
+        """
         args = {k[5:-1]: v for k, v in query.items() if k.startswith('page[')}
         if {'number', 'size'} == set(args.keys()):
             if not args['number'].isdecimal() or not args['size'].isdecimal():
