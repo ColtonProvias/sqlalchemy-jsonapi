@@ -1,8 +1,10 @@
 # SQLAlchemy-JSONAPI Changelog
 
-## 0.3 - Deserialization
+## 1.0.0 - 1.0 Compatibility
 
 *In Development*
+
+* BREAKING Complete rewrite for JSON API 1.0 compatibility
 
 ## 0.2 - Querying and View Permissions
 
