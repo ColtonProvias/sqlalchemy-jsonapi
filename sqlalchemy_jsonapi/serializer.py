@@ -277,16 +277,35 @@ class JSONAPI(object):
             self.models[model.__jsonapi_type__] = model
 
     def _check_json_data(self, json_data):
+        """
+        Ensure that the request body is both a hash and has a data key.
+
+        :param json_data: The json data provided with the request
+        """
         if not isinstance(json_data, dict):
             raise BadRequestError('Request body should be a JSON hash')
         if 'data' not in json_data.keys():
             raise BadRequestError('Request should contain data key')
 
     def _fetch_resource(self, session, api_type, obj_id, permission):
+        """
+        Fetch a resource by type and id, also doing a permission check.
+
+        :param session: SQLAlchemy session
+        :param api_type: The type
+        :param obj_id: ID for the resource
+        :param permission: Permission to check
+        """
         obj = session.query(self.models[api_type]).get(obj_id)
         check_permission(obj, None, permission)
+        return obj
 
     def _render_short_instance(self, instance):
+        """
+        For those very short versions of resources, we have this.
+
+        :param instance: The instance to render
+        """
         check_permission(instance, None, Permissions.VIEW)
         return {
             'type': instance.__jsonapi_type__,
