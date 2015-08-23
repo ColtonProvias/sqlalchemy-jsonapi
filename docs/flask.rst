@@ -30,5 +30,8 @@ on_error
 on_response
 -----------
 
+API
+===
+
 .. autoclass:: FlaskJSONAPI
     :members:
