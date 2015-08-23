@@ -531,9 +531,7 @@ class JSONAPI(object):
 
         :param session: SQLAlchemy session
         :param data: JSON data provided with the request
-        :param api_type: The resource type
-        :param obj_id: Resource ID
-        :param relationship: Relationship name
+        :param params: Keyword arguments
         """
         self._check_json_data(data)
 
@@ -581,6 +579,13 @@ class JSONAPI(object):
     @inject_model
     @inject_resource(Permissions.DELETE)
     def delete_resource(self, session, data, model, resource):
+        """
+        Delete a resource.
+
+        :param session: SQLAlchemy session
+        :param data: JSON data provided with the request
+        :param params: Keyword arguments
+        """
         self._check_instance_relationships_for_delete(resource)
         session.delete(resource)
         session.commit()
