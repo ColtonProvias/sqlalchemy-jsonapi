@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, PermissionDeniedError, ResourceNotFoundError,
-    RelatedResourceNotFoundError, NotAFieldError, RelationshipNotFoundError,
+    RelatedResourceNotFoundError, RelationshipNotFoundError,
     ValidationError, MissingTypeError)
 
 

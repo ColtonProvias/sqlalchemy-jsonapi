@@ -24,23 +24,14 @@ class BadRequestError(BaseError):
         self.detail = detail
 
 
-class NotAFieldError(BaseError):
-    status_code = 400
-    code = 'not_a_field'
-
-
-class NotARelationshipError(BaseError):
-    pass
-
-
 class NotAnAttributeError(BaseError):
     status_code = 409
     code = 'not_an_attribute'
     title = 'Not An Attribute'
 
     def __init__(self, model, key):
-        self.detail = '{} has no attribute {}'.format(model.__jsonapi_type__,
-                                                      key)
+        tmpl = '{} has no attribute {}'
+        self.detail = tmpl.format(model.__jsonapi_type__, key)
 
 
 class NotSortableError(BaseError):
@@ -49,12 +40,8 @@ class NotSortableError(BaseError):
     code = 'not_sortable'
 
     def __init__(self, model, attr_name):
-        self.detail = 'The requested field {} on type {} is not a sortable field.'.format(
-            model.__jsonapi_type__, attr_name)
-
-
-class OutOfBoundsError(BaseError):
-    pass
+        tmpl = 'The requested field {} on type {} is not a sortable field.'
+        self.detail = tmpl.format(model.__jsonapi_type__, attr_name)
 
 
 class PermissionDeniedError(BaseError):
@@ -63,17 +50,12 @@ class PermissionDeniedError(BaseError):
     title = 'Permission Denied'
 
     def __init__(self, permission, model, instance=None, relationship=None):
-        self.detail = "{} denied on {}".format(permission.value,
-                                               model.__jsonapi_type__)
+        tmpl = '{} denied on {}'
+        self.detail = tmpl.format(permission.value, model.__jsonapi_type__)
         if instance is not None:
             self.detail += '.' + str(instance.id)
         if relationship is not None:
             self.detail += '.' + relationship.key
-
-
-class IDAlreadyExistsError(BaseError):
-
-    pass
 
 
 class InvalidTypeForEndpointError(BaseError):
@@ -123,8 +105,8 @@ class RelatedResourceNotFoundError(BaseError):
     title = 'Related Resource Not Found'
 
     def __init__(self, api_type, obj_id):
-        self.detail = 'Related resource {}.{} not found'.format(api_type,
-                                                                obj_id)
+        tmpl = 'Related resource {}.{} not found'
+        self.detail = tmpl.format(api_type, obj_id)
 
 
 class RelationshipNotFoundError(BaseError):
@@ -152,4 +134,6 @@ class ResourceTypeNotFoundError(BaseError):
     code = 'resource_type_not_found'
 
     def __init__(self, api_type):
-        self.detail = 'This backend has not been configured to handle resources of type ' + api_type + '.'
+        tmpl = 'This backend has not been configured to handle resources of '\
+            'type {}.'
+        self.detail = tmpl.format(api_type)

@@ -1,6 +1,5 @@
 from sqlalchemy_jsonapi.errors import (
-    BadRequestError, NotAFieldError, NotAnAttributeError,
-    NotARelationshipError, NotSortableError, OutOfBoundsError)
+    BadRequestError, NotAnAttributeError, NotSortableError)
 
 
 def test_200_with_no_querystring(bunch_of_posts, client):
