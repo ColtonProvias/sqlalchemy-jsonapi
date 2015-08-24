@@ -1,5 +1,9 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 1.0.1 - Full Testing Coverage
+
+*In Development*
+
 ## 1.0.0 - Start of 1.0 Compatibility
 
 *2015-08-24*

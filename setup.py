@@ -13,7 +13,7 @@ https://github.com/coltonprovias/sqlalchemy-jsonapi
 from setuptools import setup
 
 setup(name='SQLAlchemy-JSONAPI',
-      version='1.0.0',
+      version='1.0.1',
       url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',
