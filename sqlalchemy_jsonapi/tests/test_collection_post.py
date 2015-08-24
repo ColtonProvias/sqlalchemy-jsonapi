@@ -2,7 +2,8 @@ import json
 
 from sqlalchemy_jsonapi.errors import (
     InvalidTypeForEndpointError, MissingTypeError, PermissionDeniedError,
-    ValidationError, MissingContentTypeError, NotAnAttributeError)
+    ValidationError, MissingContentTypeError, NotAnAttributeError,
+    BadRequestError)
 from faker import Faker
 
 fake = Faker()
@@ -146,4 +147,4 @@ def test_409_for_wrong_field_name(client):
     client.post('/api/users/',
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
-                    409, NotAnAttributeError)
+                    400, BadRequestError)

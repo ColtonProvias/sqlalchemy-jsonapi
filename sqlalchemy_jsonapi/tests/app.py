@@ -78,11 +78,6 @@ class User(Timestamp, db.Model):
         """ Never let the password be seen. """
         return False
 
-    @permission_test(Permissions.EDIT)
-    def allow_edit(self):
-        """ We want our users to be uneditable. """
-        return False
-
     @permission_test(Permissions.DELETE)
     def allow_delete(self):
         """ Just like a popular social media site, we won't delete users. """

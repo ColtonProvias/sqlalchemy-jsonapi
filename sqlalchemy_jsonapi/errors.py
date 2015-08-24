@@ -51,7 +51,7 @@ class PermissionDeniedError(BaseError):
 
     def __init__(self, permission, model, instance=None, field=None):
         tmpl = '{} denied on {}'
-        self.detail = tmpl.format(permission.value, model.__jsonapi_type__)
+        self.detail = tmpl.format(permission.name, model.__jsonapi_type__)
         if instance is not None:
             self.detail += '.' + str(instance.id)
         if field is not None:
