@@ -7,7 +7,7 @@ MIT License
 
 from uuid import uuid4
 
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -76,6 +76,12 @@ class User(Timestamp, db.Model):
     @permission_test(Permissions.VIEW, 'password')
     def view_password(self):
         """ Never let the password be seen. """
+        return False
+
+    @permission_test(Permissions.EDIT)
+    def prevent_edit(self):
+        if request.view_args['api_type'] == 'posts':
+            return True
         return False
 
     @permission_test(Permissions.DELETE)

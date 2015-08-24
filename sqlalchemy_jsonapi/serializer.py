@@ -744,10 +744,13 @@ class JSONAPI(object):
                                RelationshipActions.GET)(resource)
 
         if relationship.direction == MANYTOONE:
-            try:
-                response.data['data'] = self._render_short_instance(related)
-            except PermissionDeniedError:
+            if related == None:
                 response.data['data'] = None
+            else:
+                try:
+                    response.data['data'] = self._render_short_instance(related)
+                except PermissionDeniedError:
+                    response.data['data'] = None
         else:
             response.data['data'] = []
             for item in related:
@@ -824,12 +827,16 @@ class JSONAPI(object):
                                                      item['type'],
                                                      item['id'],
                                                      Permissions.EDIT)
-                    remote = item.__mapper__.relationships[remote_side]
+                    remote = to_relate.__mapper__.relationships[remote_side]
 
                     if remote.direction == MANYTOONE:
-                        check_permission(item, remote_side, Permissions.EDIT)
+                        check_permission(to_relate,
+                                         remote_side,
+                                         Permissions.EDIT)
                     else:
-                        check_permission(item, remote_side, Permissions.CREATE)
+                        check_permission(to_relate,
+                                         remote_side,
+                                         Permissions.CREATE)
                     appender(resource, to_relate)
             session.commit()
         except KeyError:
@@ -911,8 +918,11 @@ class JSONAPI(object):
             session.rollback()
             raise ValidationError(str(e.orig))
         except AssertionError as e:
+            session.rollback()
             raise ValidationError(e.msg)
-
+        except TypeError as e:
+            session.rollback()
+            raise ValidationError('Incompatible data type')
         return self.get_resource(
             session,
             {},
@@ -1046,7 +1056,11 @@ class JSONAPI(object):
             session.rollback()
             raise ValidationError(str(e.orig))
         except AssertionError as e:
+            session.rollback()
             raise ValidationError(e.msg)
+        except TypeError as e:
+            session.rollback()
+            raise ValidationError('In compatible data type')
         session.refresh(resource)
         response = self.get_resource(
             session,
@@ -1090,7 +1104,7 @@ class JSONAPI(object):
                         '{} must be an array'.format(relationship.key))
 
                 for item in json_data['data']:
-                    if not {'type', 'id'} in set(item.keys()):
+                    if {'type', 'id'} != set(item.keys()):
                             raise BadRequestError(
                                 '{} must have type and id keys'
                                 .format(relationship.key))
@@ -1120,11 +1134,12 @@ class JSONAPI(object):
         except KeyError:
             raise ValidationError('Incompatible type provided')
 
-        return self.get_resource(
+        return self.get_relationship(
             session,
             {},
             {
                 'api_type': model.__jsonapi_type__,
-                'obj_id': resource.id
+                'obj_id': resource.id,
+                'relationship': relationship.key
             }
         )

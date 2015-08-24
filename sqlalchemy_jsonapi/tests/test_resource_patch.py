@@ -70,10 +70,10 @@ def test_404_related_resource_not_found(client, post):
     client.patch('/api/posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
-                     404, RelatedResourceNotFoundError)
+                     404, ResourceNotFoundError)
 
 
-def test_404_field_not_found(client, post, user):
+def test_400_field_not_found(client, post, user):
     payload = {
         'data': {
             'type': 'posts',
@@ -91,7 +91,7 @@ def test_404_field_not_found(client, post, user):
     client.patch('/api/posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
-                     404, RelationshipNotFoundError)
+                     400, BadRequestError)
 
 
 def test_409_type_mismatch_to_one(client, post, user):
@@ -115,7 +115,7 @@ def test_409_type_mismatch_to_one(client, post, user):
                      409, ValidationError)
 
 
-def test_409_type_mismatch_to_many(client, post, user):
+def test_400_type_mismatch_to_many(client, post, user):
     payload = {
         'data': {
             'type': 'posts',
@@ -133,7 +133,7 @@ def test_409_type_mismatch_to_many(client, post, user):
     client.patch('/api/posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
-                     409, ValidationError)
+                     400, BadRequestError)
 
 
 def test_409_validation_failed(client, post, user):
@@ -181,7 +181,7 @@ def test_400_type_does_not_match_endpoint(client, post, user):
     client.patch('/api/posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
-                     400, MissingTypeError)
+                     400, BadRequestError)
 
 
 def test_403_permission_denied(user, client):

@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, PermissionDeniedError, RelationshipNotFoundError,
-    ResourceNotFoundError, ToManyExpectedError, MissingContentTypeError)
+    ResourceNotFoundError, ToManyExpectedError, MissingContentTypeError, ValidationError)
 
 
 def test_200_on_deletion_from_to_many(comment, client):
@@ -38,7 +38,7 @@ def test_404_on_relationship_not_found(post, client):
 def test_403_on_permission_denied(user, client):
     client.delete('/api/users/{}/relationships/logs/'.format(
         user.id),
-                  data='{}',
+                  data='{"data": []}',
                   content_type='application/vnd.api+json').validate(
                       403, PermissionDeniedError)
 
@@ -46,9 +46,9 @@ def test_403_on_permission_denied(user, client):
 def test_409_on_to_one_provided(post, client):
     client.delete('/api/posts/{}/relationships/author/'.format(
         post.id),
-                  data='{}',
+                  data='{"data": {}}',
                   content_type='application/vnd.api+json').validate(
-                      409, ToManyExpectedError)
+                      409, ValidationError)
 
 
 def test_409_missing_content_type_header(post, client):
