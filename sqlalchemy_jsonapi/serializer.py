@@ -5,6 +5,7 @@ Colton J. Provias
 MIT License
 """
 
+# TODO: getargspec is deprecated
 import inspect
 
 from enum import Enum

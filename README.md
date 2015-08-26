@@ -1,5 +1,7 @@
 # SQLAlchemy-JSONAPI
 
+[![Build Status](https://travis-ci.org/ColtonProvias/sqlalchemy-jsonapi.svg?branch=master)](https://travis-ci.org/ColtonProvias/sqlalchemy-jsonapi)
+
 [JSON API](http://jsonapi.org/) implementation for use with
 [SQLAlchemy](http://www.sqlalchemy.org/).
 
