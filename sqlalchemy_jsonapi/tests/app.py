@@ -22,7 +22,7 @@ app.testing = True
 db = SQLAlchemy(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = \
-    'postgresql+psycopg2://localhost/sqlalchemy_jsonapi'
+    'sqlite://'
 app.config['SQLALCHEMY_ECHO'] = False
 
 

@@ -2,3 +2,10 @@ SQLAlchemy>=1.0.8
 inflection>=0.3.1
 flask>=0.10.1
 blinker>=1.4
+bcrypt==2.0.0
+fake-factory==0.5.2
+Flask-SQLAlchemy==2.0
+inflection==0.3.1
+passlib==1.6.5
+pathtools==0.1.2
+SQLAlchemy-Utils==0.30.16
