@@ -11,10 +11,9 @@ import pytest
 from flask import Response
 from flask.testing import FlaskClient
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy_jsonapi.tests.app import db as db_
-from sqlalchemy_jsonapi.tests.app import app, User, Post, Comment, Log
+from app import db as db_
+from app import app, User, Post, Comment, Log
 from faker import Faker
-from uuid import uuid4
 
 Session = sessionmaker()
 
