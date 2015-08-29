@@ -21,8 +21,7 @@ app.testing = True
 
 db = SQLAlchemy(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = \
-    'sqlite://'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
 app.config['SQLALCHEMY_ECHO'] = False
 
 

@@ -177,10 +177,17 @@ class FlaskJSONAPI(object):
             }
             results = self.on_request.send(self, **event_kwargs)
             data = override(data, results)
+
+            args = [self.sqla.session, data, kwargs['api_type']]
+            if 'obj_id' in kwargs.keys():
+                args.append(kwargs['obj_id'])
+            if 'relationship' in kwargs.keys():
+                args.append(kwargs['relationship'])
+
             try:
                 attr = '{}_{}'.format(method.name, endpoint.name).lower()
                 handler = getattr(self.serializer, attr)
-                response = handler(self.sqla.session, data, kwargs)
+                response = handler(*args)
                 results = self.on_success.send(self,
                                                response=response,
                                                **event_kwargs)

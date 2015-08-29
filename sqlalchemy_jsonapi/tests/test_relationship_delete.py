@@ -3,7 +3,8 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     BadRequestError, PermissionDeniedError, RelationshipNotFoundError,
-    ResourceNotFoundError, ToManyExpectedError, MissingContentTypeError, ValidationError)
+    ResourceNotFoundError, ToManyExpectedError, MissingContentTypeError,
+    ValidationError)
 
 
 def test_200_on_deletion_from_to_many(comment, client):

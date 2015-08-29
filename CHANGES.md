@@ -1,8 +1,10 @@
 # SQLAlchemy-JSONAPI Changelog
 
-## 1.0.1 - Fixes for 1.0 Compatibility
+## 2.0.0 - Interface Fix
 
-*In Development*
+*2015-08-29*
+
+* BREAKING Replaced dict params with api_type, obj_id, and rel_key
 
 ## 1.0.0 - Start of 1.0 Compatibility
 

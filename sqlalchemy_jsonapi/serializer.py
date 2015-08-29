@@ -118,7 +118,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '1.0.1'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.0.0'}
         }
 
 
@@ -186,70 +186,6 @@ def get_rel_desc(instance, key, action):
         check_permission(instance, key, Permissions.DELETE)
         return descs.get(action, lambda x, v: getattr(x, key).remove(v))
 
-def inject_model(fn):
-    """
-    Take the provided type and replace it with the model it refers to.
-
-    :param fn: Function to decorate
-    """
-
-    def wrapped(serializer, session, data, params):
-        api_type = params.pop('api_type')
-        if api_type not in serializer.models.keys():
-            raise ResourceTypeNotFoundError(api_type)
-        model = serializer.models[api_type]
-        if len(inspect.getargspec(fn)[0]) == 4:
-            return fn(serializer, session, data, model)
-        else:
-            return fn(serializer, session, data, model, params)
-
-    return wrapped
-
-
-def inject_resource(permission):
-    """
-    Take the provided resource ID and replace it with the actual instance.
-
-    :param permission: Permission to check for
-    """
-
-    def wrapper(fn):
-        def wrapped(serializer, session, data, model, params):
-            obj_id = params.pop('obj_id')
-            instance = session.query(model).get(obj_id)
-            if not instance:
-                raise ResourceNotFoundError(model, obj_id)
-            check_permission(instance, None, permission)
-            if len(inspect.getargspec(fn)[0]) == 5:
-                return fn(serializer, session, data, model, instance)
-            else:
-                return fn(serializer, session, data, model, instance, params)
-
-        return wrapped
-
-    return wrapper
-
-
-def inject_relationship(permission):
-    """
-    Replace the provided relationship key with the relationship itself.
-
-    :param permission: Permission to check for
-    """
-
-    def wrapper(fn):
-        def wrapped(serializer, session, data, model, instance, params):
-            rel_key = params.pop('relationship')
-            if rel_key not in model.__mapper__.relationships.keys():
-                raise RelationshipNotFoundError(model, instance, rel_key)
-            relationship = model.__mapper__.relationships[rel_key]
-            check_permission(instance, relationship.key, permission)
-            return fn(serializer, session, data, model, instance, relationship)
-
-        return wrapped
-
-    return wrapper
-
 
 class JSONAPI(object):
     """ JSON API Serializer for SQLAlchemy ORM models. """
@@ -312,6 +248,19 @@ class JSONAPI(object):
                         check_perm = prop_value.__jsonapi_check_permission__
                         perm_idv[check_perm] = prop_value
             self.models[model.__jsonapi_type__] = model
+
+    def _fetch_model(self, api_type):
+        if api_type not in self.models.keys():
+            raise ResourceTypeNotFoundError(api_type)
+        return self.models[api_type]
+
+
+    def _get_relationship(self, resource, rel_key, permission):
+        if rel_key not in resource.__mapper__.relationships.keys():
+            raise RelationshipNotFoundError(resource, resource, rel_key)
+        relationship = resource.__mapper__.relationships[rel_key]
+        check_permission(resource, relationship.key, permission)
+        return relationship
 
     def _check_json_data(self, json_data):
         """
@@ -399,8 +348,7 @@ class JSONAPI(object):
                     if key in include.keys():
                         new_include = self._parse_include(include[key])
                         built = self._render_full_resource(related,
-                                                           new_include,
-                                                           fields)
+                                                           new_include, fields)
                         included = built.pop('included')
                         to_ret['included'].update(included)
                         to_ret['included'][(api_type, related.id)] = built
@@ -423,8 +371,7 @@ class JSONAPI(object):
 
                     if key in include.keys():
                         new_include = self._parse_include(include[key])
-                        built = self._render_full_resource(item,
-                                                           new_include,
+                        built = self._render_full_resource(item, new_include,
                                                            fields)
                         included = built.pop('included')
                         to_ret['included'].update(included)
@@ -527,18 +474,20 @@ class JSONAPI(object):
 
         return 0, None
 
-    @inject_model
-    @inject_resource(Permissions.EDIT)
-    @inject_relationship(Permissions.DELETE)
-    def delete_relationship(self, session, data, model, resource,
-                            relationship):
+    def delete_relationship(self, session, data, api_type, obj_id, rel_key):
         """
         Delete a resource or multiple resources from a to-many relationship.
 
         :param session: SQLAlchemy session
         :param data: JSON data provided with the request
-        :param params: Keyword arguments
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
+        :param rel_key: Key of the relationship to fetch
         """
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.EDIT)
+        relationship = self._get_relationship(resource, rel_key,
+                                              Permissions.DELETE)
         self._check_json_data(data)
 
         if not isinstance(data['data'], list):
@@ -552,15 +501,12 @@ class JSONAPI(object):
 
         session.add(resource)
 
-        remove = get_rel_desc(resource,
-                              relationship.key,
+        remove = get_rel_desc(resource, relationship.key,
                               RelationshipActions.DELETE)
         reverse_side = relationship.back_populates
 
         for item in data['data']:
-            item = self._fetch_resource(session,
-                                        item['type'],
-                                        item['id'],
+            item = self._fetch_resource(session, item['type'], item['id'],
                                         Permissions.EDIT)
 
             if reverse_side:
@@ -585,16 +531,17 @@ class JSONAPI(object):
 
         return response
 
-    @inject_model
-    @inject_resource(Permissions.DELETE)
-    def delete_resource(self, session, data, model, resource):
+    def delete_resource(self, session, data, api_type, obj_id):
         """
         Delete a resource.
 
         :param session: SQLAlchemy session
         :param data: JSON data provided with the request
-        :param params: Keyword arguments
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
         """
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.VIEW)
         self._check_instance_relationships_for_delete(resource)
 
         session.delete(resource)
@@ -605,15 +552,15 @@ class JSONAPI(object):
 
         return response
 
-    @inject_model
-    def get_collection(self, session, query, model):
+    def get_collection(self, session, query, api_key):
         """
         Fetch a collection of resources of a specified type.
 
         :param session: SQLAlchemy session
-        :param data: Dict of query args
-        :param params: Keyword arguments
+        :param query: Dict of query args
+        :param api_type: The type of the model
         """
+        model = self._fetch_model(api_key)
         include = self._parse_include(query.get('include', '').split(','))
         fields = self._parse_fields(query)
         included = {}
@@ -669,16 +616,17 @@ class JSONAPI(object):
         response.data['included'] = list(included.values())
         return response
 
-    @inject_model
-    @inject_resource(Permissions.VIEW)
-    def get_resource(self, session, query, model, resource):
+    def get_resource(self, session, query, api_type, obj_id):
         """
         Fetch a resource.
 
         :param session: SQLAlchemy session
-        :param data: Dict of query args
-        :param params: Keyword arguments
+        :param query: Dict of query args
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
         """
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.VIEW)
         include = self._parse_include(query.get('include', '').split(','))
         fields = self._parse_fields(query)
 
@@ -691,28 +639,29 @@ class JSONAPI(object):
 
         return response
 
-    @inject_model
-    @inject_resource(Permissions.VIEW)
-    @inject_relationship(Permissions.VIEW)
-    def get_related(self, session, query, model, resource, relationship):
+    def get_related(self, session, query, api_type, obj_id, rel_key):
         """
         Fetch a collection of related resources.
 
         :param session: SQLAlchemy session
-        :param data: Dict of query args
-        :param params: Keyword arguments
+        :param query: Dict of query args
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
+        :param rel_key: Key of the relationship to fetch
         """
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.VIEW)
+        relationship = self._get_relationship(resource, rel_key,
+                                              Permissions.VIEW)
         response = JSONAPIResponse()
 
-        related = get_rel_desc(resource,
-                               relationship.key,
+        related = get_rel_desc(resource, relationship.key,
                                RelationshipActions.GET)(resource)
 
         if relationship.direction == MANYTOONE:
             try:
                 response.data['data'] = self._render_full_resource(related,
-                                                                   {},
-                                                                   {})
+                                                                   {}, {})
             except PermissionDeniedError:
                 response.data['data'] = None
         else:
@@ -727,21 +676,23 @@ class JSONAPI(object):
 
         return response
 
-    @inject_model
-    @inject_resource(Permissions.VIEW)
-    @inject_relationship(Permissions.VIEW)
-    def get_relationship(self, session, query, model, resource, relationship):
+    def get_relationship(self, session, query, api_type, obj_id, rel_key):
         """
         Fetch a collection of related resource types and ids.
 
         :param session: SQLAlchemy session
-        :param data: Dict of query args
-        :param params: Keyword arguments
+        :param query: Dict of query args
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
+        :param rel_key: Key of the relationship to fetch
         """
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.VIEW)
+        relationship = self._get_relationship(resource, rel_key,
+                                              Permissions.VIEW)
         response = JSONAPIResponse()
 
-        related = get_rel_desc(resource,
-                               relationship.key,
+        related = get_rel_desc(resource, relationship.key,
                                RelationshipActions.GET)(resource)
 
         if relationship.direction == MANYTOONE:
@@ -749,7 +700,8 @@ class JSONAPI(object):
                 response.data['data'] = None
             else:
                 try:
-                    response.data['data'] = self._render_short_instance(related)
+                    response.data['data'] = self._render_short_instance(
+                        related)
                 except PermissionDeniedError:
                     response.data['data'] = None
         else:
@@ -763,18 +715,22 @@ class JSONAPI(object):
 
         return response
 
-    @inject_model
-    @inject_resource(Permissions.EDIT)
-    @inject_relationship(Permissions.EDIT)
-    def patch_relationship(self, session, json_data, model, resource,
-                           relationship):
+    def patch_relationship(self, session, json_data, api_type, obj_id,
+                           rel_key):
         """
         Replacement of relationship values.
 
         :param session: SQLAlchemy session
-        :param data: Request JSON Data
-        :param params: Keyword arguments
+        :param json_data: Request JSON Data
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
+        :param rel_key: Key of the relationship to fetch
         """
+        model = self._fetch_model(api_type)
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.EDIT)
+        relationship = self._get_relationship(resource, rel_key,
+                                              Permissions.EDIT)
         self._check_json_data(json_data)
 
         session.add(resource)
@@ -789,17 +745,15 @@ class JSONAPI(object):
                 check_permission(related, None, Permissions.EDIT)
                 check_permission(related, remote_side, Permissions.EDIT)
 
-                setter = get_rel_desc(resource,
-                                      relationship.key,
+                setter = get_rel_desc(resource, relationship.key,
                                       RelationshipActions.SET)
 
                 if json_data['data'] == None:
                     setter(resource, None)
                 else:
-                    to_relate = self._fetch_resource(session,
-                                                     json_data['data']['type'],
-                                                     json_data['data']['id'],
-                                                     Permissions.EDIT)
+                    to_relate = self._fetch_resource(
+                        session, json_data['data']['type'],
+                        json_data['data']['id'], Permissions.EDIT)
                     check_permission(to_relate, remote_side, Permissions.EDIT)
                     setter(resource, to_relate)
             else:
@@ -808,11 +762,9 @@ class JSONAPI(object):
 
                 related = getattr(resource, relationship.key)
 
-                remover = get_rel_desc(resource,
-                                       relationship.key,
+                remover = get_rel_desc(resource, relationship.key,
                                        RelationshipActions.DELETE)
-                appender = get_rel_desc(resource,
-                                        relationship.key,
+                appender = get_rel_desc(resource, relationship.key,
                                         RelationshipActions.APPEND)
                 for item in related:
                     check_permission(item, None, Permissions.EDIT)
@@ -824,41 +776,37 @@ class JSONAPI(object):
                     remover(resource, item)
 
                 for item in json_data['data']:
-                    to_relate = self._fetch_resource(session,
-                                                     item['type'],
-                                                     item['id'],
-                                                     Permissions.EDIT)
+                    to_relate = self._fetch_resource(
+                        session, item['type'], item['id'], Permissions.EDIT)
                     remote = to_relate.__mapper__.relationships[remote_side]
 
                     if remote.direction == MANYTOONE:
-                        check_permission(to_relate,
-                                         remote_side,
+                        check_permission(to_relate, remote_side,
                                          Permissions.EDIT)
                     else:
-                        check_permission(to_relate,
-                                         remote_side,
+                        check_permission(to_relate, remote_side,
                                          Permissions.CREATE)
                     appender(resource, to_relate)
             session.commit()
         except KeyError:
             raise ValidationError('Incompatible Type')
 
-        return self.get_relationship(session, {}, {
-            'api_type': model.__jsonapi_type__,
-            'obj_id': resource.id,
-            'relationship': relationship.key
-        })
+        return self.get_relationship(session, {}, model.__jsonapi_type__,
+            resource.id, relationship.key)
 
-    @inject_model
-    @inject_resource(Permissions.EDIT)
-    def patch_resource(self, session, json_data, model, resource):
+    def patch_resource(self, session, json_data, api_type, obj_id):
         """
         Replacement of resource values.
 
         :param session: SQLAlchemy session
-        :param data: Request JSON Data
-        :param params: Keyword arguments
+        :param json_data: Request JSON Data
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
+        :param rel_key: Key of the relationship to fetch
         """
+        model = self._fetch_model(api_type)
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.EDIT)
         self._check_json_data(json_data)
         orm_desc_keys = resource.__mapper__.all_orm_descriptors.keys()
 
@@ -877,8 +825,7 @@ class JSONAPI(object):
             raise BadRequestError(
                 '{} not relationships for {}.{}'.format(
                     ', '.join(list(data_keys - model_keys)),
-                    model.__jsonapi_type__,
-                    resource.id))
+                    model.__jsonapi_type__, resource.id))
 
         attrs_to_ignore = {'__mapper__', 'id'}
 
@@ -892,14 +839,8 @@ class JSONAPI(object):
                     continue
 
                 self.patch_relationship(
-                    session,
-                    json_data['data']['relationships'][key],
-                    {
-                        'api_type': model.__jsonapi_type__,
-                        'obj_id': resource.id,
-                        'relationship': key
-                    }
-                )
+                    session, json_data['data']['relationships'][key],
+                    model.__jsonapi_type__, resource.id, key)
 
             data_keys = set(json_data['data']['attributes'].keys())
             model_keys = set(orm_desc_keys) - attrs_to_ignore
@@ -908,8 +849,7 @@ class JSONAPI(object):
                 raise BadRequestError(
                     '{} not attributes for {}.{}'.format(
                         ', '.join(list(data_keys - model_keys)),
-                        model.__jsonapi_type__,
-                        resource.id))
+                        model.__jsonapi_type__, resource.id))
 
             for key in data_keys & model_keys:
                 setter = get_attr_desc(resource, key, AttributeActions.SET)
@@ -925,16 +865,9 @@ class JSONAPI(object):
             session.rollback()
             raise ValidationError('Incompatible data type')
         return self.get_resource(
-            session,
-            {},
-            {
-                'api_type': model.__jsonapi_type__,
-                'obj_id': resource.id
-            }
-        )
+            session, {}, model.__jsonapi_type__, resource.id)
 
-    @inject_model
-    def post_collection(self, session, data, model):
+    def post_collection(self, session, data, api_type):
         """
         Create a new Resource.
 
@@ -942,6 +875,7 @@ class JSONAPI(object):
         :param data: Request JSON Data
         :param params: Keyword arguments
         """
+        model = self._fetch_model(api_type)
         self._check_json_data(data)
 
         orm_desc_keys = model.__mapper__.all_orm_descriptors.keys()
@@ -961,8 +895,8 @@ class JSONAPI(object):
         if not data_keys < model_keys:
             raise BadRequestError(
                 '{} not relationships for {}'.format(
-                    ', '.join(list(data_keys - model_keys)),
-                    model.__jsonapi_type__))
+                    ', '.join(list(data_keys -
+                                   model_keys)), model.__jsonapi_type__))
 
         attrs_to_ignore = {'__mapper__', 'id'}
 
@@ -986,8 +920,7 @@ class JSONAPI(object):
                 remote_side = relationship.back_populates
 
                 if relationship.direction == MANYTOONE:
-                    setter = get_rel_desc(resource,
-                                          key,
+                    setter = get_rel_desc(resource, key,
                                           RelationshipActions.SET)
                     if data_rel is None:
                         setter(resource, None)
@@ -998,44 +931,36 @@ class JSONAPI(object):
                         if not {'type', 'id'} == set(data_rel.keys()):
                             raise BadRequestError(
                                 '{} must have type and id keys'.format(key))
-                        to_relate = self._fetch_resource(session,
-                                                         data_rel['type'],
-                                                         data_rel['id'],
-                                                         Permissions.EDIT)
+                        to_relate = self._fetch_resource(
+                            session, data_rel['type'], data_rel['id'],
+                            Permissions.EDIT)
                         rem = to_relate.__mapper__.relationships[remote_side]
                         if rem.direction == MANYTOONE:
-                            check_permission(to_relate,
-                                             remote_side,
+                            check_permission(to_relate, remote_side,
                                              Permissions.EDIT)
                         else:
-                            check_permission(to_relate,
-                                             remote_side,
+                            check_permission(to_relate, remote_side,
                                              Permissions.CREATE)
                         setter(resource, to_relate)
                 else:
-                    setter = get_rel_desc(resource,
-                                          key,
+                    setter = get_rel_desc(resource, key,
                                           RelationshipActions.APPEND)
                     if not isinstance(data_rel, list):
                         raise BadRequestError(
                             '{} must be an array'.format(key))
                     for item in data_rel:
                         if not {'type', 'id'} in set(item.keys()):
-                                raise BadRequestError(
-                                    '{} must have type and id keys'
-                                    .format(key))
-                        to_relate = self._fetch_resource(session,
-                                                         item['type'],
+                            raise BadRequestError(
+                                '{} must have type and id keys'.format(key))
+                        to_relate = self._fetch_resource(session, item['type'],
                                                          item['id'],
                                                          Permissions.EDIT)
                         rem = to_relate.__mapper__.relationships[remote_side]
                         if rem.direction == MANYTOONE:
-                            check_permission(to_relate,
-                                             remote_side,
+                            check_permission(to_relate, remote_side,
                                              Permissions.EDIT)
                         else:
-                            check_permission(to_relate,
-                                             remote_side,
+                            check_permission(to_relate, remote_side,
                                              Permissions.CREATE)
                         setter(resource, to_relate)
 
@@ -1045,8 +970,8 @@ class JSONAPI(object):
             if not data_keys < model_keys:
                 raise BadRequestError(
                     '{} not attributes for {}'.format(
-                        ', '.join(list(data_keys - model_keys)),
-                        model.__jsonapi_type__))
+                        ', '.join(list(data_keys -
+                                       model_keys)), model.__jsonapi_type__))
 
             for key in data_keys & model_keys:
                 setter = get_attr_desc(resource, key, AttributeActions.SET)
@@ -1061,31 +986,28 @@ class JSONAPI(object):
             raise ValidationError(e.msg)
         except TypeError as e:
             session.rollback()
-            raise ValidationError('In compatible data type')
+            raise ValidationError('Incompatible data type')
         session.refresh(resource)
         response = self.get_resource(
-            session,
-            {},
-            {
-                'api_type': model.__jsonapi_type__,
-                'obj_id': resource.id
-            }
-        )
+            session, {}, model.__jsonapi_type__, resource.id)
         response.status_code = 201
         return response
 
-    @inject_model
-    @inject_resource(Permissions.EDIT)
-    @inject_relationship(Permissions.CREATE)
-    def post_relationship(self, session, json_data, model, resource,
-                          relationship):
+    def post_relationship(self, session, json_data, api_type, obj_id, rel_key):
         """
         Append to a relationship.
 
         :param session: SQLAlchemy session
-        :param data: Request JSON Data
-        :param params: Keyword arguments
+        :param json_data: Request JSON Data
+        :param api_type: Type of the resource
+        :param obj_id: ID of the resource
+        :param rel_key: Key of the relationship to fetch
         """
+        model = self._fetch_model(api_type)
+        resource = self._fetch_resource(session, api_type, obj_id,
+                                        Permissions.EDIT)
+        relationship = self._get_relationship(resource, rel_key,
+                                              Permissions.CREATE)
         if relationship.direction == MANYTOONE:
             raise ValidationError('Cannot post to to-one relationship')
 
@@ -1096,8 +1018,7 @@ class JSONAPI(object):
 
         try:
             for item in json_data['data']:
-                setter = get_rel_desc(resource,
-                                      relationship.key,
+                setter = get_rel_desc(resource, relationship.key,
                                       RelationshipActions.APPEND)
 
                 if not isinstance(json_data['data'], list):
@@ -1106,25 +1027,21 @@ class JSONAPI(object):
 
                 for item in json_data['data']:
                     if {'type', 'id'} != set(item.keys()):
-                            raise BadRequestError(
-                                '{} must have type and id keys'
-                                .format(relationship.key))
+                        raise BadRequestError(
+                            '{} must have type and id keys'
+                            .format(relationship.key))
 
-                    to_relate = self._fetch_resource(session,
-                                                     item['type'],
-                                                     item['id'],
-                                                     Permissions.EDIT)
+                    to_relate = self._fetch_resource(
+                        session, item['type'], item['id'], Permissions.EDIT)
 
                     rem = to_relate.__mapper__.relationships[remote_side]
 
                     if rem.direction == MANYTOONE:
-                        check_permission(to_relate,
-                                         remote_side,
+                        check_permission(to_relate, remote_side,
                                          Permissions.EDIT)
 
                     else:
-                        check_permission(to_relate,
-                                         remote_side,
+                        check_permission(to_relate, remote_side,
                                          Permissions.CREATE)
 
                     setter(resource, to_relate)
@@ -1136,11 +1053,4 @@ class JSONAPI(object):
             raise ValidationError('Incompatible type provided')
 
         return self.get_relationship(
-            session,
-            {},
-            {
-                'api_type': model.__jsonapi_type__,
-                'obj_id': resource.id,
-                'relationship': relationship.key
-            }
-        )
+            session, {}, model.__jsonapi_type__, resource.id, relationship.key)
