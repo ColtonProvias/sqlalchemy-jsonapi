@@ -8,3 +8,4 @@ Flask-SQLAlchemy==2.0
 passlib==1.6.5
 pathtools==0.1.2
 SQLAlchemy-Utils==0.30.16
+pytest==2.7.3

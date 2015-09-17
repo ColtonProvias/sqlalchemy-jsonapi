@@ -434,7 +434,7 @@ class JSONAPI(object):
         ret = {}
         for item in include:
             if '.' in item:
-                local, remote = item.split('.', maxsplit=1)
+                local, remote = item.split('.', 1)
             else:
                 local = item
                 remote = None
