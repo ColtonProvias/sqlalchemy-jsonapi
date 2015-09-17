@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.0.2
+
+*In Progress*
+
+* Fixes Python 2.7 compatibility
+
 ## 2.0.1
 
 *2015-09-16*

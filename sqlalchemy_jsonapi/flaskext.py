@@ -10,11 +10,15 @@ import json
 import uuid
 
 from blinker import signal
-from enum import Enum
 from flask import make_response, request
 
 from .errors import BaseError, MissingContentTypeError
 from .serializer import JSONAPI
+
+try:
+    from enum import Enum
+except ImportError:
+    from enum34 import Enum
 
 
 class Method(Enum):
