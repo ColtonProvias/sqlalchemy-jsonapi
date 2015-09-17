@@ -366,7 +366,7 @@ class JSONAPI(object):
                     if key in local_fields:
                         to_ret['relationships'][key]['data'].append({
                             'id': item.id,
-                            'type': api_type
+                            'type': item.__jsonapi_type__
                         })
 
                     if key in include.keys():
