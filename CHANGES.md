@@ -2,7 +2,7 @@
 
 ## 2.0.2
 
-*In Progress*
+*2015-09-16*
 
 * Fixes Python 2.7 compatibility
 
