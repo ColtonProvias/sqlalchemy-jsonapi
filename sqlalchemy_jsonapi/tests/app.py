@@ -79,6 +79,7 @@ class User(Timestamp, db.Model):
 
     @permission_test(Permissions.EDIT)
     def prevent_edit(self):
+        """ Prevent editing for no reason. """
         if request.view_args['api_type'] == 'posts':
             return True
         return False

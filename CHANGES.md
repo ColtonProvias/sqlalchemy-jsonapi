@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.0.1
+
+*2015-09-16*
+
+* Fixed #6 where flask may conflict with flask package on Python 2.7.
+
 ## 2.0.0 - Interface Fix
 
 *2015-08-29*
