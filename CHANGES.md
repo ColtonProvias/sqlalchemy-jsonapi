@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.0.3
+
+*2015-09-17*
+
+* Merged #7 by @angelosarto.  Fixed type of related items returned in relationships.
+
 ## 2.0.2
 
 *2015-09-16*
