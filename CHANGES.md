@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.1
+
+*2015-09-18*
+
+* Fixed api_key error.  My fault, killed pytest too early.
+
 ## 2.1.0
 
 *2015-09-18*

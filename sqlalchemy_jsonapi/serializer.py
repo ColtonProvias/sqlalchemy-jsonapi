@@ -114,7 +114,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.0'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.1'}
         }
 
 
@@ -480,7 +480,7 @@ class JSONAPI(object):
         :param obj_id: ID of the resource
         :param rel_key: Key of the relationship to fetch
         """
-        model = self._fetch_model(api_key)
+        model = self._fetch_model(api_type)
         resource = self._fetch_resource(session, api_type, obj_id,
                                         Permissions.EDIT)
         relationship = self._get_relationship(resource, rel_key,
