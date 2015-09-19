@@ -60,15 +60,14 @@ def attr_descriptor(action, *names):
     :param action: The AttributeActions that this descriptor performs
     :param names: A list of names of the attributes this references
     """
-
+    if isinstance(action, AttributeActions):
+        action = [action]
     def wrapped(fn):
         print(fn)
         if not hasattr(fn, '__jsonapi_action__'):
             fn.__jsonapi_action__ = set()
             fn.__jsonapi_desc_for_attrs__ = set()
         fn.__jsonapi_desc_for_attrs__ |= set(names)
-        if isinstance(action, AttributeActions):
-            action = [action]
         fn.__jsonapi_action__ |= set(action)
         return fn
 
@@ -83,14 +82,14 @@ def relationship_descriptor(action, *names):
     :param action: The RelationshipActions that this descriptor performs
     :param names: A list of names of the relationships this references
     """
+    if isinstance(action, RelationshipActions):
+        action = [action]
 
     def wrapped(fn):
         if not hasattr(fn, '__jsonapi_action__'):
             fn.__jsonapi_action__ = set()
             fn.__jsonapi_desc_for_rels__ = set()
         fn.__jsonapi_desc_for_rels__ |= set(names)
-        if isinstance(action, RelationshipActions):
-            action = [action]
         fn.__jsonapi_action__ |= set(action)
         return fn
 
@@ -139,7 +138,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.6'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.7'}
         }
 
 

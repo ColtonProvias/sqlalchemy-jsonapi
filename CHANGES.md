@@ -1,5 +1,13 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.7
+
+*2015-09-19*
+
+* Fixed reference before assignment error.  Why it was doing that?
+
+I apologize for rapid fire updates, but this is being developed alongside another project so it's trying to keep up with the main project.
+
 ## 2.1.6
 
 *2015-09-19*
