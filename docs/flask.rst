@@ -59,6 +59,18 @@ Triggered after rendering of response::
         def process_api_response(sender, method, endpoint, data, req_args, rendered_response):
             # Handle the rendered response
 
+Wrapping the Handlers
+=====================
+
+While signals provide some control, sometimes you want to wrap or override the handler for the particular endpoint and method.  This can be done through a specialized decorator that allows you to specify in what cases you want the handler wrapped::
+
+        @api.wrap_handler(['users'], [Methods.GET], [Endpoints.COLLECTION, Endpoints.RESOURCE])
+        def log_it(next, *args, **kwargs):
+            logging.info('In a wrapped handler!')
+            return next(*args, **kwargs)
+
+Handlers are placed into a list and run in order of placement within the list.  That means you can perform several layers of checks and override as needed.
+
 API
 ===
 

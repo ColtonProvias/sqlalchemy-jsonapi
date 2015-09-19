@@ -8,6 +8,7 @@ MIT License
 import datetime
 import json
 import uuid
+from functools import wraps
 
 from blinker import signal
 from flask import make_response, request
@@ -115,6 +116,7 @@ class FlaskJSONAPI(object):
         """
         self.app = app
         self.sqla = sqla
+        self._handler_chains = dict()
 
         if app is not None:
             self._setup_adapter(namespace, route_prefix)
@@ -132,6 +134,36 @@ class FlaskJSONAPI(object):
         self.sqla = sqla
 
         self._setup_adapter(namespace, route_prefix)
+
+    def wrap_handler(self, api_types, methods, endpoints):
+        """
+        Allow for a handler to be wrapped in a chain.
+
+        :param api_types: Types to wrap handlers for
+        :param methods: Methods to wrap handlers for
+        :param endpoints: Endpoints to wrap handlers for
+        """
+        def wrapper(fn):
+            @wraps(fn)
+            def wrapped(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            for api_type in api_types:
+                for method in methods:
+                    for endpoint in endpoints:
+                        key = (api_type, method, endpoint)
+                        self._handler_chains.setdefault(key, [])
+                        self._handler_chains[key].append(wrapped)
+            return wrapped
+        return wrapper
+
+    def _call_next(self, handler_chain):
+        def wrapped(*args, **kwargs):
+            if len(handler_chain) == 1:
+                return handler_chain[0](*args, **kwargs)
+            else:
+                return handler_chain[0](self._call_next(handler_chain[1:]), *args, **kwargs)
+        return wrapped
 
     def _setup_adapter(self, namespace, route_prefix):
         """
@@ -191,7 +223,12 @@ class FlaskJSONAPI(object):
             try:
                 attr = '{}_{}'.format(method.name, endpoint.name).lower()
                 handler = getattr(self.serializer, attr)
-                response = handler(*args)
+                handler_chain = list(self._handler_chains.get((kwargs['api_type'],
+                                                               method,
+                                                               endpoint), []))
+                handler_chain.append(handler)
+                chained_handler = self._call_next(handler_chain)
+                response = chained_handler(*args)
                 results = self.on_success.send(self,
                                                response=response,
                                                **event_kwargs)

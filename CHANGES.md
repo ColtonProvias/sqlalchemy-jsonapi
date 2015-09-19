@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.0
+
+*2015-09-18*
+
+* Added wrapping/chaining of handlers via a simple decorator
+
 ## 2.0.3
 
 *2015-09-17*

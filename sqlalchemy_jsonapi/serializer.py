@@ -5,9 +5,6 @@ Colton J. Provias
 MIT License
 """
 
-# TODO: getargspec is deprecated
-import inspect
-
 from enum import Enum
 from inflection import pluralize, underscore
 from sqlalchemy.exc import IntegrityError
@@ -15,8 +12,7 @@ from sqlalchemy.orm.interfaces import MANYTOONE
 from sqlalchemy.util.langhelpers import iterate_attributes
 
 from .errors import (BadRequestError, InvalidTypeForEndpointError,
-                     MissingTypeError, NotAnAttributeError, NotSortableError,
-                     PermissionDeniedError, RelatedResourceNotFoundError,
+                     MissingTypeError, NotSortableError, PermissionDeniedError,
                      RelationshipNotFoundError, ResourceNotFoundError,
                      ResourceTypeNotFoundError, ToManyExpectedError,
                      ValidationError)
@@ -118,7 +114,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.0.3'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.0'}
         }
 
 
@@ -484,6 +480,7 @@ class JSONAPI(object):
         :param obj_id: ID of the resource
         :param rel_key: Key of the relationship to fetch
         """
+        model = self._fetch_model(api_key)
         resource = self._fetch_resource(session, api_type, obj_id,
                                         Permissions.EDIT)
         relationship = self._get_relationship(resource, rel_key,
