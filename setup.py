@@ -19,7 +19,7 @@ if sys.version_info[0] != 3 or sys.version_info[1] < 4:
       requirements.append('enum34')
 
 setup(name='SQLAlchemy-JSONAPI',
-      version='2.1.1',
+      version='2.1.2',
       url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',

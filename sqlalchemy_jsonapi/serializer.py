@@ -114,7 +114,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.1'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.2'}
         }
 
 
@@ -807,7 +807,7 @@ class JSONAPI(object):
         self._check_json_data(json_data)
         orm_desc_keys = resource.__mapper__.all_orm_descriptors.keys()
 
-        if not ({'type', 'id'} < set(json_data['data'].keys())):
+        if not ({'type', 'id'} <= set(json_data['data'].keys())):
             raise BadRequestError('Missing type or id')
 
         if json_data['data']['id'] != str(resource.id):
@@ -818,7 +818,7 @@ class JSONAPI(object):
 
         data_keys = set(json_data['data']['relationships'].keys())
         model_keys = set(resource.__mapper__.relationships.keys())
-        if not data_keys < model_keys:
+        if not data_keys <= model_keys:
             raise BadRequestError(
                 '{} not relationships for {}.{}'.format(
                     ', '.join(list(data_keys - model_keys)),
@@ -842,7 +842,7 @@ class JSONAPI(object):
             data_keys = set(json_data['data']['attributes'].keys())
             model_keys = set(orm_desc_keys) - attrs_to_ignore
 
-            if not data_keys < model_keys:
+            if not data_keys <= model_keys:
                 raise BadRequestError(
                     '{} not attributes for {}.{}'.format(
                         ', '.join(list(data_keys - model_keys)),
@@ -889,7 +889,7 @@ class JSONAPI(object):
 
         data_keys = set(data['data'].get('relationships', {}).keys())
         model_keys = set(resource.__mapper__.relationships.keys())
-        if not data_keys < model_keys:
+        if not data_keys <= model_keys:
             raise BadRequestError(
                 '{} not relationships for {}'.format(
                     ', '.join(list(data_keys -
@@ -964,7 +964,7 @@ class JSONAPI(object):
             data_keys = set(data['data'].get('attributes', {}).keys())
             model_keys = set(orm_desc_keys) - attrs_to_ignore
 
-            if not data_keys < model_keys:
+            if not data_keys <= model_keys:
                 raise BadRequestError(
                     '{} not attributes for {}'.format(
                         ', '.join(list(data_keys -

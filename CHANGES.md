@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.2
+
+*2015-09-19*
+
+* Fixed subset comparison that prevented setting relationships when all relationships were used
+
 ## 2.1.1
 
 *2015-09-18*
