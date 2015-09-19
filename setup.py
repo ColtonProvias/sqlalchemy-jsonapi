@@ -2,12 +2,14 @@
 SQLAlchemy-JSONAPI
 ------------------
 
-JSON API Mixin for SQLAlchemy that aims to meet the full JSON API spec as
-published at http://jsonapi.org/format.
+JSON API serializer for SQLAlchemy that aims to meet the full JSON API spec as
+published at http://jsonapi.org/format.  Also includes Flask adapter.
 
 Full documentation is available at:
 
-https://github.com/coltonprovias/sqlalchemy-jsonapi
+https://sqlalchemy-jsonapi.readthedocs.org/
+
+GitHub at https://github.com/coltonprovias/sqlalchemy-jsonapi
 """
 
 from setuptools import setup
@@ -19,7 +21,7 @@ if sys.version_info[0] != 3 or sys.version_info[1] < 4:
       requirements.append('enum34')
 
 setup(name='SQLAlchemy-JSONAPI',
-      version='2.1.4',
+      version='2.1.5',
       url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',

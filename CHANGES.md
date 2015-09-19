@@ -1,8 +1,17 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.5
+
+*2015-09-19*
+
+* Permissions and actions can now be provided as sets.
+* Fixed problem where users think libraries don't update often enough by pushing out 4th update on a single date
+
 ## 2.1.4
 
-## JSONAPIEncoder is now replaceable in the flask extension
+*2015-09-19*
+
+* JSONAPIEncoder is now replaceable in the flask extension
 
 ## 2.1.3
 
