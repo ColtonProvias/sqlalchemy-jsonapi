@@ -12,7 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
-from sqlalchemy_jsonapi import FlaskJSONAPI, Permissions, permission_test, Method, Endpoint
+from sqlalchemy_jsonapi import FlaskJSONAPI, Permissions, permission_test, Method, Endpoint, INTERACTIVE_PERMISSIONS
 from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
 
 app = Flask(__name__)
@@ -119,8 +119,8 @@ class Post(Timestamp, db.Model):
         """ Hide unpublished. """
         return self.is_published
 
-    @permission_test(Permissions.DELETE, 'logs')
-    def prevent_deletion_of_logs(self):
+    @permission_test(INTERACTIVE_PERMISSIONS, 'logs')
+    def prevent_altering_of_logs(self):
         return False
 
 
@@ -159,20 +159,18 @@ class Log(Timestamp, db.Model):
                         backref=backref('logs',
                                         lazy='dynamic'))
 
-    @permission_test(Permissions.CREATE)
-    def block_create(cls):
-        return False
-
-    @permission_test(Permissions.EDIT)
-    def block_edit(cls):
+    @permission_test(INTERACTIVE_PERMISSIONS)
+    def block_interactive(cls):
         return False
 
 
 api = FlaskJSONAPI(app, db)
 
+
 @api.wrap_handler(['posts'], [Method.GET], [Endpoint.COLLECTION])
 def sample_override(next, *args, **kwargs):
     return next(*args, **kwargs)
+
 
 if __name__ == '__main__':
     app.run()

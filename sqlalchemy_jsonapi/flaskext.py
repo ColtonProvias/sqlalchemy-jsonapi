@@ -146,6 +146,7 @@ class FlaskJSONAPI(object):
         :param methods: Methods to wrap handlers for
         :param endpoints: Endpoints to wrap handlers for
         """
+
         def wrapper(fn):
             @wraps(fn)
             def wrapped(*args, **kwargs):
@@ -158,6 +159,7 @@ class FlaskJSONAPI(object):
                         self._handler_chains.setdefault(key, [])
                         self._handler_chains[key].append(wrapped)
             return wrapped
+
         return wrapper
 
     def _call_next(self, handler_chain):
@@ -166,11 +168,14 @@ class FlaskJSONAPI(object):
 
         :param handler_chain: The current chain of handlers
         """
+
         def wrapped(*args, **kwargs):
             if len(handler_chain) == 1:
                 return handler_chain[0](*args, **kwargs)
             else:
-                return handler_chain[0](self._call_next(handler_chain[1:]), *args, **kwargs)
+                return handler_chain[0](self._call_next(handler_chain[1:]), *
+                                        args, **kwargs)
+
         return wrapped
 
     def _setup_adapter(self, namespace, route_prefix):
@@ -186,8 +191,11 @@ class FlaskJSONAPI(object):
             pattern = route_prefix + endpoint.value
             name = '{}_{}_{}'.format(namespace, method.name, endpoint.name)
             view = self._generate_view(method, endpoint)
-            self.app.add_url_rule(pattern + '/', name + '_slashed', view,
-                                  methods=[method.name], strict_slashes=False)
+            self.app.add_url_rule(pattern + '/',
+                                  name + '_slashed',
+                                  view,
+                                  methods=[method.name],
+                                  strict_slashes=False)
             self.app.add_url_rule(pattern, name, view, methods=[method.name])
 
     def _generate_view(self, method, endpoint):
@@ -233,9 +241,8 @@ class FlaskJSONAPI(object):
             try:
                 attr = '{}_{}'.format(method.name, endpoint.name).lower()
                 handler = getattr(self.serializer, attr)
-                handler_chain = list(self._handler_chains.get((kwargs['api_type'],
-                                                               method,
-                                                               endpoint), []))
+                handler_chain = list(self._handler_chains.get((
+                    kwargs['api_type'], method, endpoint), []))
                 handler_chain.append(handler)
                 chained_handler = self._call_next(handler_chain)
                 response = chained_handler(*args)
