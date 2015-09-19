@@ -3,7 +3,7 @@ from sqlalchemy_jsonapi.errors import (
 
 
 def test_200_with_no_querystring(bunch_of_posts, client):
-    response = client.get('/api/posts/').validate(200)
+    response = client.get('/api/posts').validate(200)
     assert response.json_data['data'][0]['type'] == 'posts'
     assert response.json_data['data'][0]['id']
 

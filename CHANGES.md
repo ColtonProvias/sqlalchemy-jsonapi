@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.3
+
+*2015-09-19*
+
+* Trailing slashes are now optional.  Idea based on change by @emilecaron.
+
 ## 2.1.2
 
 *2015-09-19*
