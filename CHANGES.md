@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.6
+
+*2015-09-19*
+
+* Fixed error when TypeError is raised in descriptors
+
 ## 2.1.5
 
 *2015-09-19*

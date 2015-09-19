@@ -67,6 +67,8 @@ def attr_descriptor(action, *names):
             fn.__jsonapi_action__ = set()
             fn.__jsonapi_desc_for_attrs__ = set()
         fn.__jsonapi_desc_for_attrs__ |= set(names)
+        if isinstance(action, AttributeActions):
+            action = [action]
         fn.__jsonapi_action__ |= set(action)
         return fn
 
@@ -87,6 +89,8 @@ def relationship_descriptor(action, *names):
             fn.__jsonapi_action__ = set()
             fn.__jsonapi_desc_for_rels__ = set()
         fn.__jsonapi_desc_for_rels__ |= set(names)
+        if isinstance(action, RelationshipActions):
+            action = [action]
         fn.__jsonapi_action__ |= set(action)
         return fn
 
@@ -135,7 +139,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.5'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.6'}
         }
 
 
