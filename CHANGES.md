@@ -1,5 +1,9 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.4
+
+## JSONAPIEncoder is now replaceable in the flask extension
+
 ## 2.1.3
 
 *2015-09-19*

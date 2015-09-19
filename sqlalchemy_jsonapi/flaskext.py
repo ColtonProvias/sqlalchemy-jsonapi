@@ -100,6 +100,9 @@ class FlaskJSONAPI(object):
     #: (sender, method, endpoint, data, req_args, error)
     on_error = signal('jsonapi-on-error')
 
+    #: JSON Encoder to use
+    json_encoder = JSONAPIEncoder
+
     def __init__(self,
                  app=None,
                  sqla=None,
@@ -246,7 +249,7 @@ class FlaskJSONAPI(object):
                 response = override(exc, results)
             rendered_response = make_response()
             if response.status_code != 204:
-                data = json.dumps(response.data, cls=JSONAPIEncoder)
+                data = json.dumps(response.data, cls=self.json_encoder)
                 rendered_response = make_response(data)
             rendered_response.status_code = response.status_code
             rendered_response.content_type = 'application/vnd.api+json'
