@@ -138,7 +138,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.7'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.8'}
         }
 
 
@@ -342,7 +342,7 @@ class JSONAPI(object):
         local_fields = fields.get(api_type, orm_desc_keys)
 
         for key, relationship in instance.__mapper__.relationships.items():
-            attrs_to_ignore |= set(relationship.local_columns) | {key}
+            attrs_to_ignore |= set([c.name for c in relationship.local_columns]) | {key}
 
             try:
                 desc = get_rel_desc(instance, key, RelationshipActions.GET)

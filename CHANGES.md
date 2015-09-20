@@ -1,10 +1,16 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.8
+
+*2015-09-19*
+
+* Fixed issue where local columns for relationships were still appearing in responses
+
 ## 2.1.7
 
 *2015-09-19*
 
-* Fixed reference before assignment error.  Why it was doing that?
+* Fixed reference before assignment error
 
 I apologize for rapid fire updates, but this is being developed alongside another project so it's trying to keep up with the main project.
 
