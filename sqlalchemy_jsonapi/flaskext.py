@@ -254,7 +254,7 @@ class FlaskJSONAPI(object):
                 self.sqla.session.rollback()
                 results = self.on_error.send(self, error=exc, **event_kwargs)
                 response = override(exc, results)
-            rendered_response = make_response()
+            rendered_response = make_response('')
             if response.status_code != 204:
                 data = json.dumps(response.data, cls=self.json_encoder)
                 rendered_response = make_response(data)

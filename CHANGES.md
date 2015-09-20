@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.10
+
+*2015-09-20*
+
+* Fixes compatibility with Sentry when running unit tests.  204 errors still need content.
+
 ## 2.1.9
 
 *2015-09-20*

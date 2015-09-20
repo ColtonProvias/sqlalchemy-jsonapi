@@ -138,7 +138,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.9'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.10'}
         }
 
 
