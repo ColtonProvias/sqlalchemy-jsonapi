@@ -138,7 +138,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.8'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.9'}
         }
 
 
@@ -923,6 +923,8 @@ class JSONAPI(object):
 
         attrs_to_ignore = {'__mapper__', 'id'}
 
+        setters = []
+
         try:
             if 'id' in data['data'].keys():
                 resource.id = data['data']['id']
@@ -941,12 +943,11 @@ class JSONAPI(object):
                 data_rel = data_rel['data']
 
                 remote_side = relationship.back_populates
-
                 if relationship.direction == MANYTOONE:
                     setter = get_rel_desc(resource, key,
                                           RelationshipActions.SET)
                     if data_rel is None:
-                        setter(resource, None)
+                        setters.append([setter, None])
                     else:
                         if not isinstance(data_rel, dict):
                             raise BadRequestError(
@@ -964,7 +965,7 @@ class JSONAPI(object):
                         else:
                             check_permission(to_relate, remote_side,
                                              Permissions.CREATE)
-                        setter(resource, to_relate)
+                        setters.append([setter, to_relate])
                 else:
                     setter = get_rel_desc(resource, key,
                                           RelationshipActions.APPEND)
@@ -985,7 +986,7 @@ class JSONAPI(object):
                         else:
                             check_permission(to_relate, remote_side,
                                              Permissions.CREATE)
-                        setter(resource, to_relate)
+                        setters.append([setter, to_relate])
 
             data_keys = set(data['data'].get('attributes', {}).keys())
             model_keys = set(orm_desc_keys) - attrs_to_ignore
@@ -995,6 +996,9 @@ class JSONAPI(object):
                     '{} not attributes for {}'.format(
                         ', '.join(list(data_keys -
                                        model_keys)), model.__jsonapi_type__))
+
+            for setter, value in setters:
+                setter(resource, value)
 
             for key in data_keys & model_keys:
                 setter = get_attr_desc(resource, key, AttributeActions.SET)

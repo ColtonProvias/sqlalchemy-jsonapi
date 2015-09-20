@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.9
+
+*2015-09-20*
+
+* Fixed issue where incomplete models get committed to multiple relationships before they earn redeeming attributes
+
 ## 2.1.8
 
 *2015-09-19*
