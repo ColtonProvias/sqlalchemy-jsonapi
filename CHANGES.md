@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 2.1.11
+
+*2015-09-20*
+
+* Fixed issue where not providing a relationships key would cause a POST or PATCH request to fail
+
 ## 2.1.10
 
 *2015-09-20*

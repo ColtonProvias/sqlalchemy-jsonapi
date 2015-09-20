@@ -62,6 +62,7 @@ def attr_descriptor(action, *names):
     """
     if isinstance(action, AttributeActions):
         action = [action]
+
     def wrapped(fn):
         print(fn)
         if not hasattr(fn, '__jsonapi_action__'):
@@ -138,7 +139,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '2.1.10'}
+            'meta': {'sqlalchemy_jsonapi_version': '2.1.11'}
         }
 
 
@@ -342,7 +343,8 @@ class JSONAPI(object):
         local_fields = fields.get(api_type, orm_desc_keys)
 
         for key, relationship in instance.__mapper__.relationships.items():
-            attrs_to_ignore |= set([c.name for c in relationship.local_columns]) | {key}
+            attrs_to_ignore |= set([c.name for c in relationship.local_columns
+                                    ]) | {key}
 
             try:
                 desc = get_rel_desc(instance, key, RelationshipActions.GET)
@@ -842,6 +844,9 @@ class JSONAPI(object):
         if json_data['data']['type'] != resource.__jsonapi_type__:
             raise BadRequestError('Type does not match')
 
+        json_data['data'].setdefault('relationships', {})
+        json_data['data'].setdefault('attributes', {})
+
         data_keys = set(json_data['data']['relationships'].keys())
         model_keys = set(resource.__mapper__.relationships.keys())
         if not data_keys <= model_keys:
@@ -913,7 +918,10 @@ class JSONAPI(object):
         resource = model()
         check_permission(resource, None, Permissions.CREATE)
 
-        data_keys = set(data['data'].get('relationships', {}).keys())
+        data['data'].setdefault('relationships', {})
+        data['data'].setdefault('attributes', {})
+
+        data_keys = set(data['data']['relationships'].keys())
         model_keys = set(resource.__mapper__.relationships.keys())
         if not data_keys <= model_keys:
             raise BadRequestError(

@@ -173,8 +173,8 @@ class FlaskJSONAPI(object):
             if len(handler_chain) == 1:
                 return handler_chain[0](*args, **kwargs)
             else:
-                return handler_chain[0](self._call_next(handler_chain[1:]), *
-                                        args, **kwargs)
+                return handler_chain[0](self._call_next(handler_chain[1:]),
+                                        *args, **kwargs)
 
         return wrapped
 
