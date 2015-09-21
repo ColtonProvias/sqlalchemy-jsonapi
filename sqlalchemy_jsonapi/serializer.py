@@ -224,7 +224,7 @@ class JSONAPI(object):
                 continue
 
             prepped_name = underscore(pluralize(name))
-            api_type = getattr(model, '__jsonapi_type__', prepped_name)
+            api_type = getattr(model, '__jsonapi_type_override__', prepped_name)
 
             model.__jsonapi_attribute_descriptors__ = {}
             model.__jsonapi_rel_desc__ = {}
