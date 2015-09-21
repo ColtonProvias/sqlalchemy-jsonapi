@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 3.0.0
+
+*2015-09-20*
+
+* BREAKING: Implements #8 where `__jsonapi_type__` is replaced with `__jsonapi_type_override__`.  This can break previous configurations where `__jsonapi_type__` was used to override the generated type.  To fix breaks, just change it to `__jsonapi_type_override__` and it should work better.  Thank you, @angelosarto for your contribution on this.
+
 ## 2.1.11
 
 *2015-09-20*
