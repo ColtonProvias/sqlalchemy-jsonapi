@@ -1,5 +1,11 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 3.0.1
+
+*2015-09-22*
+
+* Removed an artifact from debugging.  Sorry about that to anybody who was confused!
+
 ## 3.0.0
 
 *2015-09-20*

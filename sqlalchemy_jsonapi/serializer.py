@@ -64,7 +64,6 @@ def attr_descriptor(action, *names):
         action = [action]
 
     def wrapped(fn):
-        print(fn)
         if not hasattr(fn, '__jsonapi_action__'):
             fn.__jsonapi_action__ = set()
             fn.__jsonapi_desc_for_attrs__ = set()
@@ -139,7 +138,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '3.0.0'}
+            'meta': {'sqlalchemy_jsonapi_version': '3.0.1'}
         }
 
 
