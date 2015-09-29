@@ -109,6 +109,7 @@ def unpublished_post(user, session):
 
 @pytest.fixture
 def bunch_of_posts(user, session):
+    posts = []
     for x in range(30):
         new_post = Post(author=user,
                         title=fake.sentence(),
@@ -117,7 +118,9 @@ def bunch_of_posts(user, session):
         session.add(new_post)
         new_post.comments.append(Comment(author=user,
                                          content=fake.paragraph()))
+        posts.append(new_post)
     session.commit()
+    return posts
 
 
 @pytest.fixture

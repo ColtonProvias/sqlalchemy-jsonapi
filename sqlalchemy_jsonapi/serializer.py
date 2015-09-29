@@ -7,6 +7,7 @@ MIT License
 
 from enum import Enum
 from inflection import pluralize, underscore
+import re
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.interfaces import MANYTOONE
 from sqlalchemy.util.langhelpers import iterate_attributes
@@ -448,6 +449,20 @@ class JSONAPI(object):
 
         return fields
 
+    def _parse_filters(self, query):
+        field_re = re.compile(r'filter\[([^\]]+)\]')
+        filters = {}
+        for k, v in query.iteritems():
+            if v == 'true':
+                v = True
+            elif v == 'false':
+                v = False
+
+            match = field_re.match(k)
+            if match:
+                filters[match.group(1)] = v
+        return filters
+
     def _parse_include(self, include):
         """
         Parse the querystring args or parent includes for includes.
@@ -587,6 +602,7 @@ class JSONAPI(object):
         model = self._fetch_model(api_key)
         include = self._parse_include(query.get('include', '').split(','))
         fields = self._parse_fields(query)
+        filters = self._parse_filters(query)
         included = {}
         sorts = query.get('sort', '').split(',')
         order_by = []
@@ -616,6 +632,10 @@ class JSONAPI(object):
 
         if len(order_by) > 0:
             collection = collection.order_by(*order_by)
+
+        if filters:
+            filters = {k: v for k, v in filters.iteritems() if hasattr(model, k)}
+            collection = collection.filter_by(**filters)
 
         pos = -1
         start, end = self._parse_page(query)
