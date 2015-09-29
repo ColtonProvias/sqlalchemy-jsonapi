@@ -837,7 +837,7 @@ class JSONAPI(object):
         if not ({'type', 'id'} <= set(json_data['data'].keys())):
             raise BadRequestError('Missing type or id')
 
-        if json_data['data']['id'] != str(resource.id):
+        if str(json_data['data']['id']) != str(resource.id):
             raise BadRequestError('IDs do not match')
 
         if json_data['data']['type'] != resource.__jsonapi_type__:
