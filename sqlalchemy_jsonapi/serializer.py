@@ -374,7 +374,7 @@ class JSONAPI(object):
                                                            new_include, fields)
                         included = built.pop('included')
                         to_ret['included'].update(included)
-                        to_ret['included'][(api_type, related.id)] = built
+                        to_ret['included'][(related.__jsonapi_type__, related.id)] = built
 
             else:
                 if key in local_fields:
@@ -398,7 +398,7 @@ class JSONAPI(object):
                                                            fields)
                         included = built.pop('included')
                         to_ret['included'].update(included)
-                        to_ret['included'][(api_type, item.id)] = built
+                        to_ret['included'][(item.__jsonapi_type__, item.id)] = built
 
         for key in set(orm_desc_keys) - attrs_to_ignore:
             try:
