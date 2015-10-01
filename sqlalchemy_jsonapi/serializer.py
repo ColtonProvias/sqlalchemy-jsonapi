@@ -222,7 +222,7 @@ class JSONAPI(object):
             if name.startswith('_'):
                 continue
 
-            prepped_name = underscore(pluralize(name))
+            prepped_name = self._api_type_for_model(model)
             api_type = getattr(model, '__jsonapi_type_override__', prepped_name)
 
             model.__jsonapi_attribute_descriptors__ = {}
@@ -271,6 +271,10 @@ class JSONAPI(object):
                         for check_perm in check_perms:
                             perm_idv[check_perm] = prop_value
             self.models[model.__jsonapi_type__] = model
+
+    def _api_type_for_model(self, model):
+        return underscore(pluralize(model.__name__))
+
 
     def _fetch_model(self, api_type):
         if api_type not in self.models.keys():
