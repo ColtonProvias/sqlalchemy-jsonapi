@@ -103,3 +103,14 @@ def test_200_when_pagination_is_out_of_range(bunch_of_posts, client):
 def test_400_when_provided_crap_data_for_pagination(bunch_of_posts, client):
     client.get('/api/posts/?page[offset]=5&page[limit]=crap').validate(
         400, BadRequestError)
+
+
+def test_200_filtered_response(bunch_of_posts, client, session):
+    for index, post in enumerate(bunch_of_posts):
+        post.title = u'Post Number {}'.format(index+1)
+        post.is_published = True
+    session.commit()
+
+    response = client.get('/api/posts?filter[title]=Post%20Number%205').validate(200)
+    assert len(response.json_data['data']) == 1
+    assert response.json_data['data'][0]['attributes']['title'] == 'Post Number 5'
