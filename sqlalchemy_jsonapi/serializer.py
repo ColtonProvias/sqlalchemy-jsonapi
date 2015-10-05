@@ -1008,12 +1008,14 @@ class JSONAPI(object):
                         ', '.join(list(data_keys -
                                        model_keys)), model.__jsonapi_type__))
 
-            for setter, value in setters:
-                setter(resource, value)
+            with session.no_autoflush:
+                for setter, value in setters:
+                    setter(resource, value)
 
-            for key in data_keys & model_keys:
-                setter = get_attr_desc(resource, key, AttributeActions.SET)
-                setter(resource, data['data']['attributes'][key])
+                for key in data_keys:
+                    setter = get_attr_desc(resource, key, AttributeActions.SET)
+                    setter(resource, data['data']['attributes'][key])
+
             session.add(resource)
             session.commit()
         except IntegrityError as e:
