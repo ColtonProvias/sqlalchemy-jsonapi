@@ -1,5 +1,14 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 3.0.2
+
+*2015-10-05*
+
+* Removed hard dependency on Flask, as suggested by @bladams in pull request #10
+* Fixed autoflush on collection post as proposed by @emilecaron in issue #13
+* Fixed issues when encountering integer IDs #11
+* Made API Type Name overridable. #9
+
 ## 3.0.1
 
 *2015-09-22*

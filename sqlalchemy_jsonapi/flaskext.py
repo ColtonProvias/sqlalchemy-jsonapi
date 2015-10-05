@@ -13,31 +13,9 @@ from functools import wraps
 from blinker import signal
 from flask import make_response, request
 
+from .constants import Endpoint, Method
 from .errors import BaseError, MissingContentTypeError
 from .serializer import JSONAPI
-
-try:
-    from enum import Enum
-except ImportError:
-    from enum34 import Enum
-
-
-class Method(Enum):
-    """ HTTP Methods used by JSON API """
-
-    GET = 'GET'
-    POST = 'POST'
-    PATCH = 'PATCH'
-    DELETE = 'DELETE'
-
-
-class Endpoint(Enum):
-    """ Four paths specified in JSON API """
-
-    COLLECTION = '/<api_type>'
-    RESOURCE = '/<api_type>/<obj_id>'
-    RELATED = '/<api_type>/<obj_id>/<relationship>'
-    RELATIONSHIP = '/<api_type>/<obj_id>/relationships/<relationship>'
 
 
 class JSONAPIEncoder(json.JSONEncoder):
