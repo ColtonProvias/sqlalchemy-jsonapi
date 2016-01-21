@@ -32,11 +32,11 @@ def test_200_resource_creation(client):
 def test_200_resource_creation_with_relationships(user, client):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'attributes': {
                 'title': 'Some title',
                 'content': 'Hello, World!',
-                'is_published': True
+                'is-published': True
             },
             'relationships': {
                 'author': {
@@ -48,13 +48,13 @@ def test_200_resource_creation_with_relationships(user, client):
             }
         }
     }
-    response = client.post('/api/posts/',
+    response = client.post('/api/blog-posts/',
                            data=json.dumps(payload),
                            content_type='application/vnd.api+json').validate(
                                201)
-    assert response.json_data['data']['type'] == 'posts'
+    assert response.json_data['data']['type'] == 'blog-posts'
     post_id = response.json_data['data']['id']
-    response = client.get('/api/posts/{}/'.format(post_id)).validate(200)
+    response = client.get('/api/blog-posts/{}/?include=author'.format(post_id)).validate(200)
     assert response.json_data['data']['relationships']['author']['data'][
         'id'
     ] == str(user.id)
@@ -87,7 +87,7 @@ def test_409_when_id_already_exists(user, client):
 
 
 def test_409_when_type_doesnt_match_endpoint(client):
-    payload = {'data': {'type': 'posts'}}
+    payload = {'data': {'type': 'blog-posts'}}
     client.post('/api/users/',
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
@@ -147,4 +147,4 @@ def test_409_for_wrong_field_name(client):
     client.post('/api/users/',
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
-                    400, BadRequestError)
+                    409, ValidationError)

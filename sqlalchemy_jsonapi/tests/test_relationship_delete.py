@@ -8,9 +8,9 @@ from sqlalchemy_jsonapi.errors import (
 
 
 def test_200_on_deletion_from_to_many(comment, client):
-    payload = {'data': [{'type': 'comments', 'id': str(comment.id)}]}
+    payload = {'data': [{'type': 'blog-comments', 'id': str(comment.id)}]}
     response = client.delete(
-        '/api/posts/{}/relationships/comments/'.format(
+        '/api/blog-posts/{}/relationships/comments/'.format(
             comment.post.id),
         data=json.dumps(payload),
         content_type='application/vnd.api+json').validate(200)
@@ -22,14 +22,14 @@ def test_200_on_deletion_from_to_many(comment, client):
 
 
 def test_404_on_resource_not_found(client):
-    client.delete('/api/posts/{}/relationships/comments/'.format(uuid4()),
+    client.delete('/api/blog-posts/{}/relationships/comments/'.format(uuid4()),
                   data='{}',
                   content_type='application/vnd.api+json').validate(
                       404, ResourceNotFoundError)
 
 
 def test_404_on_relationship_not_found(post, client):
-    client.delete('/api/posts/{}/relationships/comment/'.format(
+    client.delete('/api/blog-posts/{}/relationships/comment/'.format(
         post.id),
                   data='{}',
                   content_type='application/vnd.api+json').validate(
@@ -45,7 +45,7 @@ def test_403_on_permission_denied(user, client):
 
 
 def test_409_on_to_one_provided(post, client):
-    client.delete('/api/posts/{}/relationships/author/'.format(
+    client.delete('/api/blog-posts/{}/relationships/author/'.format(
         post.id),
                   data='{"data": {}}',
                   content_type='application/vnd.api+json').validate(
@@ -53,6 +53,6 @@ def test_409_on_to_one_provided(post, client):
 
 
 def test_409_missing_content_type_header(post, client):
-    client.delete('/api/posts/{}/relationships/comment/'.format(
+    client.delete('/api/blog-posts/{}/relationships/comment/'.format(
         post.id),
                   data='{}').validate(409, MissingContentTypeError)

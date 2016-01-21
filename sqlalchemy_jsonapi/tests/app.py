@@ -80,7 +80,7 @@ class User(Timestamp, db.Model):
     @permission_test(Permissions.EDIT)
     def prevent_edit(self):
         """ Prevent editing for no reason. """
-        if request.view_args['api_type'] == 'posts':
+        if request.view_args['api_type'] == 'blog-posts':
             return True
         return False
 
@@ -90,7 +90,7 @@ class User(Timestamp, db.Model):
         return False
 
 
-class Post(Timestamp, db.Model):
+class BlogPost(Timestamp, db.Model):
     """Post model, as if this is a blog."""
 
     __tablename__ = 'posts'
@@ -124,7 +124,7 @@ class Post(Timestamp, db.Model):
         return False
 
 
-class Comment(Timestamp, db.Model):
+class BlogComment(Timestamp, db.Model):
     """Comment for each Post."""
 
     __tablename__ = 'comments'
@@ -134,7 +134,7 @@ class Comment(Timestamp, db.Model):
     author_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
     content = Column(UnicodeText, nullable=False)
 
-    post = relationship('Post',
+    post = relationship('BlogPost',
                         lazy='joined',
                         backref=backref('comments',
                                         lazy='dynamic'))
@@ -150,7 +150,7 @@ class Log(Timestamp, db.Model):
     post_id = Column(UUIDType, ForeignKey('posts.id'))
     user_id = Column(UUIDType, ForeignKey('users.id'))
 
-    post = relationship('Post',
+    post = relationship('BlogPost',
                         lazy='joined',
                         backref=backref('logs',
                                         lazy='dynamic'))
@@ -167,7 +167,7 @@ class Log(Timestamp, db.Model):
 api = FlaskJSONAPI(app, db)
 
 
-@api.wrap_handler(['posts'], [Method.GET], [Endpoint.COLLECTION])
+@api.wrap_handler(['blog-posts'], [Method.GET], [Endpoint.COLLECTION])
 def sample_override(next, *args, **kwargs):
     return next(*args, **kwargs)
 

@@ -12,7 +12,7 @@ from flask import Response
 from flask.testing import FlaskClient
 from sqlalchemy.orm import sessionmaker
 from app import db as db_
-from app import app, User, Post, Comment, Log
+from app import app, User, BlogPost, BlogComment, Log
 from faker import Faker
 
 Session = sessionmaker()
@@ -87,7 +87,7 @@ def user(session):
 
 @pytest.fixture
 def post(user, session):
-    new_post = Post(author=user,
+    new_post = BlogPost(author=user,
                     title=fake.sentence(),
                     content=fake.paragraph(),
                     is_published=True)
@@ -98,7 +98,7 @@ def post(user, session):
 
 @pytest.fixture
 def unpublished_post(user, session):
-    new_post = Post(author=user,
+    new_post = BlogPost(author=user,
                     title=fake.sentence(),
                     content=fake.paragraph(),
                     is_published=False)
@@ -110,19 +110,19 @@ def unpublished_post(user, session):
 @pytest.fixture
 def bunch_of_posts(user, session):
     for x in range(30):
-        new_post = Post(author=user,
+        new_post = BlogPost(author=user,
                         title=fake.sentence(),
                         content=fake.paragraph(),
                         is_published=fake.boolean())
         session.add(new_post)
-        new_post.comments.append(Comment(author=user,
+        new_post.comments.append(BlogComment(author=user,
                                          content=fake.paragraph()))
     session.commit()
 
 
 @pytest.fixture
 def comment(user, post, session):
-    new_comment = Comment(author=user, post=post, content=fake.paragraph())
+    new_comment = BlogComment(author=user, post=post, content=fake.paragraph())
     session.add(new_comment)
     session.commit()
     return new_comment

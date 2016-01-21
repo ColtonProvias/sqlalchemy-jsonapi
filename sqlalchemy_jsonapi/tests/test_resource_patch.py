@@ -10,7 +10,7 @@ from sqlalchemy_jsonapi.errors import (
 def test_200(client, post, user):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'id': str(post.id),
             'attributes': {
                 'title': 'I just lost the game'
@@ -25,28 +25,25 @@ def test_200(client, post, user):
             }
         }
     }
-    response = client.patch('/api/posts/{}/'.format(post.id),
+    response = client.patch('/api/blog-posts/{}/'.format(post.id),
                             data=json.dumps(payload),
                             content_type='application/vnd.api+json').validate(
                                 200)
     assert response.json_data['data']['id'] == str(post.id)
-    assert response.json_data['data']['type'] == 'posts'
+    assert response.json_data['data']['type'] == 'blog-posts'
     assert response.json_data['data']['attributes']['title'
                                                     ] == 'I just lost the game'
-    assert response.json_data['data']['relationships']['author']['data'][
-        'id'
-    ] == str(user.id)
 
 
 def test_400_missing_type(post, client):
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps({}),
                  content_type='application/vnd.api+json').validate(
                      400, BadRequestError)
 
 
 def test_404_resource_not_found(client):
-    client.patch('/api/posts/{}/'.format(uuid4()),
+    client.patch('/api/blog-posts/{}/'.format(uuid4()),
                  content_type='application/vnd.api+json',
                  data='{}').validate(
                      404, ResourceNotFoundError)
@@ -55,7 +52,7 @@ def test_404_resource_not_found(client):
 def test_404_related_resource_not_found(client, post):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'id': str(post.id),
             'relationships': {
                 'author': {
@@ -67,7 +64,7 @@ def test_404_related_resource_not_found(client, post):
             }
         }
     }
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
                      404, ResourceNotFoundError)
@@ -76,7 +73,7 @@ def test_404_related_resource_not_found(client, post):
 def test_400_field_not_found(client, post, user):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'id': str(post.id),
             'relationships': {
                 'authors': {
@@ -88,7 +85,7 @@ def test_400_field_not_found(client, post, user):
             }
         }
     }
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
                      400, BadRequestError)
@@ -97,7 +94,7 @@ def test_400_field_not_found(client, post, user):
 def test_409_type_mismatch_to_one(client, post, user):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'id': str(post.id),
             'relationships': {
                 'comments': {
@@ -109,7 +106,7 @@ def test_409_type_mismatch_to_one(client, post, user):
             }
         }
     }
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
                      409, ValidationError)
@@ -118,7 +115,7 @@ def test_409_type_mismatch_to_one(client, post, user):
 def test_400_type_mismatch_to_many(client, post, user):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'id': str(post.id),
             'relationships': {
                 'author': [{
@@ -130,7 +127,7 @@ def test_400_type_mismatch_to_many(client, post, user):
             }
         }
     }
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
                      400, BadRequestError)
@@ -139,7 +136,7 @@ def test_400_type_mismatch_to_many(client, post, user):
 def test_409_validation_failed(client, post, user):
     payload = {
         'data': {
-            'type': 'posts',
+            'type': 'blog-posts',
             'id': str(post.id),
             'attributes': {
                 'title': None
@@ -154,7 +151,7 @@ def test_409_validation_failed(client, post, user):
             }
         }
     }
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
                      409, ValidationError)
@@ -178,7 +175,7 @@ def test_400_type_does_not_match_endpoint(client, post, user):
             }
         }
     }
-    client.patch('/api/posts/{}/'.format(post.id),
+    client.patch('/api/blog-posts/{}/'.format(post.id),
                  data=json.dumps(payload),
                  content_type='application/vnd.api+json').validate(
                      400, BadRequestError)

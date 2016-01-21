@@ -5,8 +5,8 @@ from sqlalchemy_jsonapi.errors import (
 
 
 def test_200_on_success(comment, client):
-    client.delete('/api/comments/{}/'.format(comment.id)).validate(204)
-    client.get('/api/comments/{}/'.format(comment.id)).validate(
+    client.delete('/api/blog-comments/{}/'.format(comment.id)).validate(204)
+    client.get('/api/blog-comments/{}/'.format(comment.id)).validate(
         404, ResourceNotFoundError)
 
 
@@ -21,5 +21,5 @@ def test_403_on_permission_denied(user, client):
 
 
 def test_404_on_resource_not_found(client):
-    client.delete('/api/comments/{}/'.format(uuid4())).validate(
+    client.delete('/api/blog-comments/{}/'.format(uuid4())).validate(
         404, ResourceNotFoundError)

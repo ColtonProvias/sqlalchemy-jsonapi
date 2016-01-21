@@ -1,5 +1,13 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 4.0.0
+
+*2016-01-20*
+
+* BREAKING: Keys and types are now dasherized instead of underscored to fit assumptions of spec implementation
+* BREAKING: Relationships are now lazy by default.  Using the include query parameter will trigger an eager load.
+* Added links to relationships
+
 ## 3.0.2
 
 *2015-10-05*

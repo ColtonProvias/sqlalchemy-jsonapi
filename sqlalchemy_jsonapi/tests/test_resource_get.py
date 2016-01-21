@@ -3,53 +3,53 @@ from uuid import uuid4
 
 
 def test_200_without_querystring(post, client):
-    response = client.get('/api/posts/{}/'.format(post.id)).validate(200)
-    assert response.json_data['data']['type'] == 'posts'
+    response = client.get('/api/blog-posts/{}/'.format(post.id)).validate(200)
+    assert response.json_data['data']['type'] == 'blog-posts'
     assert response.json_data['data']['id']
 
 
 def test_404_resource_not_found(client):
-    client.get('/api/posts/{}/'.format(uuid4())).validate(
+    client.get('/api/blog-posts/{}/'.format(uuid4())).validate(
         404, ResourceNotFoundError)
 
 
 def test_403_permission_denied(unpublished_post, client):
-    client.get('/api/posts/{}/'.format(unpublished_post.id)).validate(
+    client.get('/api/blog-posts/{}/'.format(unpublished_post.id)).validate(
         403, PermissionDeniedError)
 
 
 def test_200_with_single_included_model(post, client):
-    response = client.get('/api/posts/{}/?include=author'.format(
+    response = client.get('/api/blog-posts/{}/?include=author'.format(
         post.id)).validate(200)
-    assert response.json_data['data']['type'] == 'posts'
+    assert response.json_data['data']['type'] == 'blog-posts'
     assert response.json_data['included'][0]['type'] == 'users'
 
 
 def test_200_with_including_model_and_including_inbetween(comment, client):
-    response = client.get('/api/comments/{}/?include=post.author'.format(
+    response = client.get('/api/blog-comments/{}/?include=post.author'.format(
         comment.id)).validate(200)
-    assert response.json_data['data']['type'] == 'comments'
+    assert response.json_data['data']['type'] == 'blog-comments'
     for data in response.json_data['included']:
-        assert data['type'] in ['posts', 'users']
+        assert data['type'] in ['blog-posts', 'users']
 
 
 def test_200_with_multiple_includes(post, client):
-    response = client.get('/api/posts/{}/?include=comments,author'.format(
+    response = client.get('/api/blog-posts/{}/?include=comments,author'.format(
         post.id)).validate(200)
-    assert response.json_data['data']['type'] == 'posts'
+    assert response.json_data['data']['type'] == 'blog-posts'
     for data in response.json_data['included']:
-        assert data['type'] in ['comments', 'users']
+        assert data['type'] in ['blog-comments', 'users']
 
 
 def test_200_with_single_field(post, client):
-    response = client.get('/api/posts/{}/?fields[posts]=title'.format(
+    response = client.get('/api/blog-posts/{}/?fields[blog-posts]=title'.format(
         post.id)).validate(200)
     assert {'title'} == set(response.json_data['data']['attributes'].keys())
     assert len(response.json_data['data']['relationships']) == 0
 
 
 def test_200_with_multiple_fields(post, client):
-    response = client.get('/api/posts/{}/?fields[posts]=title,content'.format(
+    response = client.get('/api/blog-posts/{}/?fields[blog-posts]=title,content'.format(
         post.id)).validate(
             200)
     assert {'title', 'content'
@@ -59,7 +59,7 @@ def test_200_with_multiple_fields(post, client):
 
 def test_200_with_single_field_across_a_relationship(post, client):
     response = client.get(
-        '/api/posts/{}/?fields[posts]=title,content&fields[comments]=author&include=comments'.format(
+        '/api/blog-posts/{}/?fields[blog-posts]=title,content&fields[blog-comments]=author&include=comments'.format(
             post.id)).validate(
                 200)
     assert {'title', 'content'
