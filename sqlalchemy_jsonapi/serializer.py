@@ -140,7 +140,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '4.0.1'}
+            'meta': {'sqlalchemy_jsonapi_version': '4.0.3'}
         }
 
 
@@ -974,13 +974,13 @@ class JSONAPI(object):
 
             for key, relationship in resource.__mapper__.relationships.items():
                 attrs_to_ignore |= set(relationship.local_columns) | {key}
-                py_key = resource.__jsonapi_map_to_py__[key]
+                api_key = resource.__jsonapi_map_to_api__[key]
 
                 if 'relationships' not in data['data'].keys()\
-                        or py_key not in data['data']['relationships'].keys():
+                        or api_key not in data['data']['relationships'].keys():
                     continue
 
-                data_rel = data['data']['relationships'][key]
+                data_rel = data['data']['relationships'][api_key]
                 if 'data' not in data_rel.keys():
                     raise BadRequestError(
                         'Missing data key in relationship {}'.format(key))
@@ -988,7 +988,7 @@ class JSONAPI(object):
 
                 remote_side = relationship.back_populates
                 if relationship.direction == MANYTOONE:
-                    setter = get_rel_desc(resource, py_key,
+                    setter = get_rel_desc(resource, key,
                                           RelationshipActions.SET)
                     if data_rel is None:
                         setters.append([setter, None])
@@ -1011,7 +1011,7 @@ class JSONAPI(object):
                                              Permissions.CREATE)
                         setters.append([setter, to_relate])
                 else:
-                    setter = get_rel_desc(resource, py_key,
+                    setter = get_rel_desc(resource, key,
                                           RelationshipActions.APPEND)
                     if not isinstance(data_rel, list):
                         raise BadRequestError(

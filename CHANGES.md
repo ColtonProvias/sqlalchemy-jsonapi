@@ -1,5 +1,12 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 4.0.1 - 4.0.3
+
+*2016-01-21*
+
+* Fixed bug where the wrong map was being checked when creating new resource
+* Fixed content-length bug when DELETE is provided for resources
+
 ## 4.0.0
 
 *2016-01-20*

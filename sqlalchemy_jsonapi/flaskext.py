@@ -188,7 +188,8 @@ class FlaskJSONAPI(object):
             if method == Method.GET:
                 data = request.args
             else:
-                if int(request.headers.get('content-length', 0)) > 0:
+                content_length = request.headers.get('content-length', 0)
+                if content_length and int(content_length) > 0:
                     content_type = request.headers.get('content-type', None)
                     if content_type != 'application/vnd.api+json':
                         data = MissingContentTypeError().data
