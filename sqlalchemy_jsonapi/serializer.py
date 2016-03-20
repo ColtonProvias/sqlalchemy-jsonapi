@@ -140,7 +140,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '4.0.3'}
+            'meta': {'sqlalchemy_jsonapi_version': '4.0.5'}
         }
 
 
@@ -152,7 +152,7 @@ def get_permission_test(model, field, permission, instance=None):
     :param field: Name of the field or None for instance/model-wide
     :param permission: Permission to check for
     """
-    return model.__jsonapi_permissions__\
+    return getattr(model, '__jsonapi_permissions__', {})\
         .get(field, {})\
         .get(permission, lambda x: True)
 
@@ -1050,8 +1050,9 @@ class JSONAPI(object):
                     setter = get_attr_desc(resource, key, AttributeActions.SET)
                     setter(resource, data['data']['attributes'][api_key])
 
-            session.add(resource)
-            session.commit()
+                session.add(resource)
+                session.commit()
+
         except IntegrityError as e:
             session.rollback()
             raise ValidationError(str(e.orig))

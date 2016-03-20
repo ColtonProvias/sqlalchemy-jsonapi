@@ -1,5 +1,17 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 4.0.5
+
+*2016-03-20*
+
+* Fixed missing jsonapi_permissions attribute when patching relationships.
+
+## 4.0.4
+
+*2016-02-27*
+
+* Fixed session being flushed error during POST to collection.
+
 ## 4.0.1 - 4.0.3
 
 *2016-01-21*
