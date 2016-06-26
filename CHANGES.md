@@ -1,10 +1,18 @@
 # SQLAlchemy-JSONAPI Changelog
 
-## 4.0.5
+## 4.0.8
+
+*2016-04-32*
+
+* Fixed bug with relationship not being found during resource patch.
+
+## 4.0.5 - 4.0.7
 
 *2016-03-20*
 
 * Fixed missing jsonapi_permissions attribute when patching relationships.
+* Fixed AttributeError on GET related of a NoneType.
+* Fixed where meta was now always being injected into non-204 responses.
 
 ## 4.0.4
 

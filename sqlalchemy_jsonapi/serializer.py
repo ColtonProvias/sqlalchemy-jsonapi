@@ -140,7 +140,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '4.0.5'}
+            'meta': {'sqlalchemy_jsonapi_version': '4.0.8'}
         }
 
 
@@ -548,7 +548,7 @@ class JSONAPI(object):
             return ToManyExpectedError(model, resource, relationship)
 
         response = JSONAPIResponse()
-        response.data = {'data': []}
+        response.data = []
 
         session.add(resource)
 
@@ -648,7 +648,7 @@ class JSONAPI(object):
         start, end = self._parse_page(query)
 
         response = JSONAPIResponse()
-        response.data = {'data': []}
+        response.data['data'] = []
 
         for instance in collection:
             try:
@@ -714,8 +714,11 @@ class JSONAPI(object):
 
         if relationship.direction == MANYTOONE:
             try:
-                response.data['data'] = self._render_full_resource(related,
-                                                                   {}, {})
+                if related is None:
+                    response.data['data'] = None
+                else:
+                    response.data['data'] = self._render_full_resource(related,
+                                                                       {}, {})
             except PermissionDeniedError:
                 response.data['data'] = None
         else:
@@ -881,7 +884,7 @@ class JSONAPI(object):
         json_data['data'].setdefault('relationships', {})
         json_data['data'].setdefault('attributes', {})
 
-        data_keys = set(json_data['data']['relationships'].keys())
+        data_keys = set(map((lambda x: resource.__jsonapi_map_to_py__.get(x, None)), json_data['data'].get('relationships', {}).keys()))
         model_keys = set(resource.__mapper__.relationships.keys())
         if not data_keys <= model_keys:
             raise BadRequestError(
