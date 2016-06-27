@@ -1,0 +1,11 @@
+SQLAlchemy
+inflection
+flask
+blinker
+bcrypt
+fake-factory
+Flask-SQLAlchemy
+passlib
+pathtools
+SQLAlchemy-Utils
+pytest
