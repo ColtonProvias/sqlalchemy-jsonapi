@@ -140,7 +140,7 @@ class JSONAPIResponse(object):
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
-            'meta': {'sqlalchemy_jsonapi_version': '4.0.8'}
+            'meta': {'sqlalchemy_jsonapi_version': '4.0.9'}
         }
 
 
@@ -548,7 +548,7 @@ class JSONAPI(object):
             return ToManyExpectedError(model, resource, relationship)
 
         response = JSONAPIResponse()
-        response.data = []
+        response.data = {'data': []}
 
         session.add(resource)
 
@@ -884,12 +884,13 @@ class JSONAPI(object):
         json_data['data'].setdefault('relationships', {})
         json_data['data'].setdefault('attributes', {})
 
-        data_keys = set(map((lambda x: resource.__jsonapi_map_to_py__.get(x, None)), json_data['data'].get('relationships', {}).keys()))
-        model_keys = set(resource.__mapper__.relationships.keys())
-        if not data_keys <= model_keys:
+        missing_keys = set(json_data['data'].get('relationships', {}).keys()) \
+            - set(resource.__jsonapi_map_to_py__.keys())
+
+        if missing_keys:
             raise BadRequestError(
                 '{} not relationships for {}.{}'.format(
-                    ', '.join(list(data_keys - model_keys)),
+                    ', '.join(list(missing_keys)),
                     model.__jsonapi_type__, resource.id))
 
         attrs_to_ignore = {'__mapper__', 'id'}

@@ -1,5 +1,12 @@
 # SQLAlchemy-JSONAPI Changelog
 
+## 4.0.9
+
+*Unreleased*
+
+* Fixed bug during testing in delete_relationship where returned resource was missing data key
+* Fixed bug during testing in patch_resource where field check was failing
+
 ## 4.0.8
 
 *2016-04-32*
