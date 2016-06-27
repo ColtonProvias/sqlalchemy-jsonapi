@@ -15,3 +15,27 @@ to use and implement as possible.
 ```shell
 pip install sqlalchemy-jsonapi
 ```
+
+# Quick usage with Flask-SQLAlchemy
+
+```py
+# Assuming FlaskSQLAlchemy is db and your Flask app is app:
+from sqlalchemy_jsonapi import FlaskJSONAPI
+
+api = FlaskJSONAPI(app, db)
+
+# Or, for factory-style applications
+api = FlaskJSONAPI()
+api.init_app(app, db)
+```
+
+# Quick usage without Flask
+
+```py
+# Assuming declarative base is called Base
+from sqlalchemy_jsonapi import JSONAPI
+api = JSONAPI(Base)
+
+# And assuming a SQLAlchemy session
+print(api.get_collection(session, {}, 'resource-type'))
+```
