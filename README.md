@@ -10,13 +10,13 @@ to use and implement as possible.
 
 * [Documentation](http://sqlalchemy-jsonapi.readthedocs.org)
 
-# Installation
+## Installation
 
 ```shell
 pip install sqlalchemy-jsonapi
 ```
 
-# Quick usage with Flask-SQLAlchemy
+## Quick usage with Flask-SQLAlchemy
 
 ```py
 # Assuming FlaskSQLAlchemy is db and your Flask app is app:
@@ -29,7 +29,7 @@ api = FlaskJSONAPI()
 api.init_app(app, db)
 ```
 
-# Quick usage without Flask
+## Quick usage without Flask
 
 ```py
 # Assuming declarative base is called Base
