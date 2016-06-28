@@ -1,8 +1,8 @@
-======
-Errors
-======
+=========
+Constants
+=========
 
-.. currentmodule:: sqlalchemy_jsonapi.errors
+.. currentmodule:: sqlalchemy_jsonapi.constants
 
 .. autoclass:: Method
     :members:
