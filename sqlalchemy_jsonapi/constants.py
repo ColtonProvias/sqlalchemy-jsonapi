@@ -5,7 +5,6 @@ Colton J. Provias
 MIT License
 """
 
-
 try:
     from enum import Enum
 except ImportError:

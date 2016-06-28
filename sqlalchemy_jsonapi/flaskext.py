@@ -163,7 +163,11 @@ class FlaskJSONAPI(object):
         :param namespace: Prefix for generated endpoints
         :param route_prefix: Prefix for route patterns
         """
-        self.serializer = JSONAPI(self.sqla.Model, prefix='{}://{}{}'.format(self.app.config['PREFERRED_URL_SCHEME'], self.app.config['SERVER_NAME'], route_prefix))
+        self.serializer = JSONAPI(self.sqla.Model,
+                                  prefix='{}://{}{}'.format(
+                                      self.app.config['PREFERRED_URL_SCHEME'],
+                                      self.app.config['SERVER_NAME'],
+                                      route_prefix))
         for view in views:
             method, endpoint = view
             pattern = route_prefix + endpoint.value
@@ -220,8 +224,8 @@ class FlaskJSONAPI(object):
             try:
                 attr = '{}_{}'.format(method.name, endpoint.name).lower()
                 handler = getattr(self.serializer, attr)
-                handler_chain = list(self._handler_chains.get((
-                    kwargs['api_type'], method, endpoint), []))
+                handler_chain = list(self._handler_chains.get((kwargs[
+                    'api_type'], method, endpoint), []))
                 handler_chain.append(handler)
                 chained_handler = self._call_next(handler_chain)
                 response = chained_handler(*args)

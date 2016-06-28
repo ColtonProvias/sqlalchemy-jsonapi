@@ -2,6 +2,11 @@ from sqlalchemy_jsonapi.errors import ResourceNotFoundError, PermissionDeniedErr
 from uuid import uuid4
 
 
+# TODO: Sparse Fieldsets
+# TODO: Related Includes
+# TODO: Bad query param
+
+
 def test_200_without_querystring(post, client):
     response = client.get('/api/blog-posts/{}/'.format(post.id)).validate(200)
     assert response.json_data['data']['type'] == 'blog-posts'
@@ -42,16 +47,17 @@ def test_200_with_multiple_includes(post, client):
 
 
 def test_200_with_single_field(post, client):
-    response = client.get('/api/blog-posts/{}/?fields[blog-posts]=title'.format(
-        post.id)).validate(200)
+    response = client.get(
+        '/api/blog-posts/{}/?fields[blog-posts]=title'.format(
+            post.id)).validate(200)
     assert {'title'} == set(response.json_data['data']['attributes'].keys())
     assert len(response.json_data['data']['relationships']) == 0
 
 
 def test_200_with_multiple_fields(post, client):
-    response = client.get('/api/blog-posts/{}/?fields[blog-posts]=title,content'.format(
-        post.id)).validate(
-            200)
+    response = client.get(
+        '/api/blog-posts/{}/?fields[blog-posts]=title,content'.format(
+            post.id)).validate(200)
     assert {'title', 'content'
             } == set(response.json_data['data']['attributes'].keys())
     assert len(response.json_data['data']['relationships']) == 0
@@ -60,8 +66,7 @@ def test_200_with_multiple_fields(post, client):
 def test_200_with_single_field_across_a_relationship(post, client):
     response = client.get(
         '/api/blog-posts/{}/?fields[blog-posts]=title,content&fields[blog-comments]=author&include=comments'.format(
-            post.id)).validate(
-                200)
+            post.id)).validate(200)
     assert {'title', 'content'
             } == set(response.json_data['data']['attributes'].keys())
     assert len(response.json_data['data']['relationships']) == 0

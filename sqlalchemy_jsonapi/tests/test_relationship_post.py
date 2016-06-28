@@ -3,22 +3,27 @@ from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import ValidationError, ResourceNotFoundError, RelationshipNotFoundError
 
+# TODO: Sorting
+# TODO: Pagination
+# TODO: Ember-style filtering
+# TODO: Simple filtering
+# TODO: Complex filtering
+# TODO: Bad query param
+
 
 def test_200_on_to_many(comment, post, client):
     payload = {'data': [{'type': 'blog-comments', 'id': str(comment.id)}]}
-    response = client.post('/api/blog-posts/{}/relationships/comments/'.format(
-        post.id),
-                           data=json.dumps(payload),
-                           content_type='application/vnd.api+json').validate(
-                               200)
+    response = client.post(
+        '/api/blog-posts/{}/relationships/comments/'.format(post.id),
+        data=json.dumps(payload),
+        content_type='application/vnd.api+json').validate(200)
     assert str(comment.id) in [str(x['id'])
                                for x in response.json_data['data']]
 
 
 def test_409_on_hash_instead_of_array_provided(comment, post, client):
     payload = {'data': {'type': 'blog-comments', 'id': str(comment.id)}}
-    client.post('/api/blog-posts/{}/relationships/comments/'.format(
-        post.id),
+    client.post('/api/blog-posts/{}/relationships/comments/'.format(post.id),
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
                     409, ValidationError)
@@ -26,8 +31,7 @@ def test_409_on_hash_instead_of_array_provided(comment, post, client):
 
 def test_409_on_incompatible_model(user, post, client):
     payload = {'data': [{'type': 'users', 'id': str(user.id)}]}
-    client.post('/api/blog-posts/{}/relationships/comments/'.format(
-        post.id),
+    client.post('/api/blog-posts/{}/relationships/comments/'.format(post.id),
                 data=json.dumps(payload),
                 content_type='application/vnd.api+json').validate(
                     409, ValidationError)
@@ -48,8 +52,7 @@ def test_404_on_resource_not_found(client):
 
 
 def test_404_on_relationship_not_found(post, client):
-    client.post('/api/blog-posts/{}/relationships/comment/'.format(
-        post.id),
+    client.post('/api/blog-posts/{}/relationships/comment/'.format(post.id),
                 data='{}',
                 content_type='application/vnd.api+json').validate(
                     404, RelationshipNotFoundError)
