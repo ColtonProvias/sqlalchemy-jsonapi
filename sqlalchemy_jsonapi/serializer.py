@@ -16,7 +16,7 @@ from .errors import (BadRequestError, InvalidTypeForEndpointError,
                      RelationshipNotFoundError, ResourceNotFoundError,
                      ResourceTypeNotFoundError, ToManyExpectedError,
                      ValidationError)
-from .version import __version__
+from ._version import __version__
 
 
 class AttributeActions(Enum):
