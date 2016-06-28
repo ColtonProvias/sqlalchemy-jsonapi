@@ -12,6 +12,7 @@ Contents:
    serializer
    flask
    errors
+   constants
 
 
 Indices and tables
