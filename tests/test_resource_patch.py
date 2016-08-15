@@ -1,10 +1,8 @@
 import json
 from uuid import uuid4
 
-from sqlalchemy_jsonapi.errors import (
-    BadRequestError, PermissionDeniedError, ResourceNotFoundError,
-    RelatedResourceNotFoundError, RelationshipNotFoundError, ValidationError,
-    MissingTypeError)
+from sqlalchemy_jsonapi.errors import (BadRequestError, PermissionDeniedError,
+                                       ResourceNotFoundError, ValidationError)
 
 
 # TODO: Sparse Fieldsets

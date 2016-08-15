@@ -74,19 +74,19 @@ class User(Timestamp, db.Model):
         assert len(password) >= 5, 'Password must be 5 characters or longer.'
         return password
 
-    @permission_test(Permissions.VIEW, 'password')
+    @jsonapi_access(Permissions.VIEW, 'password')
     def view_password(self):
         """ Never let the password be seen. """
         return False
 
-    @permission_test(Permissions.EDIT)
+    @jsonapi_access(Permissions.EDIT)
     def prevent_edit(self):
         """ Prevent editing for no reason. """
         if request.view_args['api_type'] == 'blog-posts':
             return True
         return False
 
-    @permission_test(Permissions.DELETE)
+    @jsonapi_access(Permissions.DELETE)
     def allow_delete(self):
         """ Just like a popular social media site, we won't delete users. """
         return False
@@ -115,12 +115,12 @@ class BlogPost(Timestamp, db.Model):
             title) <= 100, 'Must be 5 to 100 characters long.'
         return title
 
-    @permission_test(Permissions.VIEW)
+    @jsonapi_access(Permissions.VIEW)
     def allow_view(self):
         """ Hide unpublished. """
         return self.is_published
 
-    @permission_test(INTERACTIVE_PERMISSIONS, 'logs')
+    @jsonapi_access(INTERACTIVE_PERMISSIONS, 'logs')
     def prevent_altering_of_logs(self):
         return False
 
@@ -157,7 +157,7 @@ class Log(Timestamp, db.Model):
                         lazy='joined',
                         backref=backref('logs', lazy='dynamic'))
 
-    @permission_test(INTERACTIVE_PERMISSIONS)
+    @jsonapi_access(INTERACTIVE_PERMISSIONS)
     def block_interactive(cls):
         return False
 

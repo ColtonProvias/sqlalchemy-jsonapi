@@ -1,16 +1,18 @@
 from sqlalchemy_jsonapi.errors import BadRequestError, NotSortableError
 
 
-# TODO: Ember-style filtering
-# TODO: Simple filtering
-# TODO: Complex filtering
-# TODO: Bad query param
-
+# TODO: Vanilla
 
 def test_200_with_no_querystring(bunch_of_posts, client):
     response = client.get('/api/blog-posts').validate(200)
     assert response.json_data['data'][0]['type'] == 'blog-posts'
     assert response.json_data['data'][0]['id']
+
+
+# TODO: Bad Query Param
+
+
+# TODO: Resource Inclusions
 
 
 def test_200_with_single_included_model(bunch_of_posts, client):
@@ -27,13 +29,15 @@ def test_200_with_including_model_and_including_inbetween(bunch_of_posts,
     for data in response.json_data['included']:
         assert data['type'] in ['blog-posts', 'users']
 
-
 def test_200_with_multiple_includes(bunch_of_posts, client):
     response = client.get('/api/blog-posts/?include=comments,author').validate(
         200)
     assert response.json_data['data'][0]['type'] == 'blog-posts'
     for data in response.json_data['included']:
         assert data['type'] in ['blog-comments', 'users']
+
+
+# TODO: Sparse Fieldsets
 
 
 def test_200_with_single_field(bunch_of_posts, client):
@@ -47,7 +51,7 @@ def test_200_with_bad_field(bunch_of_posts, client):
     response = client.get(
         '/api/blog-posts/?fields[blog-posts]=titles').validate(200)
     for item in response.json_data['data']:
-        assert {} == set(item['attributes'].keys())
+        assert set() == set(item['attributes'].keys())
         assert len(item['relationships']) == 0
 
 
@@ -72,6 +76,9 @@ def test_200_with_single_field_across_a_relationship(bunch_of_posts, client):
         assert len(item['attributes'].keys()) == 0
         assert len(item['attributes']) == 0
         assert {'author'} == set(item['relationships'].keys())
+
+
+# TODO: Sorting
 
 
 def test_200_sorted_response(bunch_of_posts, client):
@@ -101,6 +108,9 @@ def test_409_when_given_a_missing_field_for_sorting(bunch_of_posts, client):
         409, NotSortableError)
 
 
+# TODO: Pagination
+
+
 def test_200_paginated_response_by_page(bunch_of_posts, client):
     response = client.get(
         '/api/blog-posts/?page[number]=2&page[size]=5').validate(200)
@@ -121,3 +131,6 @@ def test_200_when_pagination_is_out_of_range(bunch_of_posts, client):
 def test_400_when_provided_crap_data_for_pagination(bunch_of_posts, client):
     client.get('/api/blog-posts/?page[offset]=5&page[limit]=crap').validate(
         400, BadRequestError)
+
+
+# TODO: Filtering

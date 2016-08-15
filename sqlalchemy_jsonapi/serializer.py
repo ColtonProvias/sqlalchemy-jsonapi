@@ -1,6 +1,5 @@
-"""
-SQLAlchemy-JSONAPI
-Serializer
+"""SQLAlchemy-JSONAPI Serializer.
+
 Colton J. Provias
 MIT License
 """
@@ -19,29 +18,22 @@ from .errors import (BadRequestError, InvalidTypeForEndpointError,
 from ._version import __version__
 
 
-class AttributeActions(Enum):
-    """ The actions that can be done to an attribute. """
+class Actions(Enum):
+    """ The actions that can be performed on an attribute or relationship. """
 
-    GET = 0
-    SET = 1
-
-
-class RelationshipActions(Enum):
-    """ The actions that can be performed on a relationship. """
-
-    GET = 10
-    APPEND = 11
-    SET = 12
-    DELETE = 13
+    GET = 1
+    APPEND = 2
+    SET = 3
+    REMOVE = 4
 
 
 class Permissions(Enum):
     """ The permissions that can be set. """
 
-    VIEW = 100
-    CREATE = 101
-    EDIT = 102
-    DELETE = 103
+    VIEW = 1
+    CREATE = 2
+    EDIT = 3
+    DELETE = 4
 
 
 ALL_PERMISSIONS = {
@@ -52,45 +44,15 @@ INTERACTIVE_PERMISSIONS = {
 }
 
 
-def attr_descriptor(action, *names):
-    """
-    Wrap a function that allows for getting or setting of an attribute.  This
-    allows for specific handling of an attribute when it comes to serializing
-    and deserializing.
-
-    :param action: The AttributeActions that this descriptor performs
-    :param names: A list of names of the attributes this references
-    """
-    if isinstance(action, AttributeActions):
+def jsonapi_action(action, *names):
+    if isinstance(action, Actions):
         action = [action]
 
     def wrapped(fn):
         if not hasattr(fn, '__jsonapi_action__'):
             fn.__jsonapi_action__ = set()
-            fn.__jsonapi_desc_for_attrs__ = set()
-        fn.__jsonapi_desc_for_attrs__ |= set(names)
-        fn.__jsonapi_action__ |= set(action)
-        return fn
-
-    return wrapped
-
-
-def relationship_descriptor(action, *names):
-    """
-    Wrap a function for modification of a relationship.  This allows for
-    specific handling for serialization and deserialization.
-
-    :param action: The RelationshipActions that this descriptor performs
-    :param names: A list of names of the relationships this references
-    """
-    if isinstance(action, RelationshipActions):
-        action = [action]
-
-    def wrapped(fn):
-        if not hasattr(fn, '__jsonapi_action__'):
-            fn.__jsonapi_action__ = set()
-            fn.__jsonapi_desc_for_rels__ = set()
-        fn.__jsonapi_desc_for_rels__ |= set(names)
+            fn.__jsonapi_desc__ = set()
+        fn.__jsonapi_desc__ |= set(names)
         fn.__jsonapi_action__ |= set(action)
         return fn
 
@@ -98,12 +60,10 @@ def relationship_descriptor(action, *names):
 
 
 class PermissionTest(object):
-    """ Authorize access to a model, resource, or specific field. """
+    """Authorize access to a model, resource, or specific field."""
 
     def __init__(self, permission, *names):
-        """
-        Decorates a function that returns a boolean representing if access is
-        allowed.
+        """Decorate a function that returns a boolean representing access.
 
         :param permission: The permission to check for
         :param names: The names to test for.  None represents the model.
@@ -128,14 +88,14 @@ class PermissionTest(object):
         return fn
 
 #: More consistent name for the decorators
-permission_test = PermissionTest
+jsonapi_access = PermissionTest
 
 
 class JSONAPIResponse(object):
-    """ Wrapper for JSON API Responses. """
+    """Wrapper for JSON API Responses."""
 
     def __init__(self):
-        """ Default the status code and data. """
+        """Default the status code and data."""
         self.status_code = 200
         self.data = {
             'jsonapi': {'version': '1.0'},
@@ -158,8 +118,7 @@ def get_permission_test(model, field, permission, instance=None):
 
 def check_permission(instance, field, permission):
     """
-    Check a permission for a given instance or field.  Raises an error if
-    denied.
+    Check a permission for a given instance or field.  Raises error if denied.
 
     :param instance: The instance to check
     :param field: The field name to check or None for instance
@@ -175,10 +134,10 @@ def get_attr_desc(instance, attribute, action):
 
     :param instance: Model instance
     :param attribute: Name of the attribute
-    :param action: AttributeAction
+    :param action: Action
     """
     descs = instance.__jsonapi_attribute_descriptors__.get(attribute, {})
-    if action == AttributeActions.GET:
+    if action == Actions.GET:
         check_permission(instance, attribute, Permissions.VIEW)
         return descs.get(action, lambda x: getattr(x, attribute))
     check_permission(instance, attribute, Permissions.EDIT)
@@ -194,13 +153,13 @@ def get_rel_desc(instance, key, action):
     :param action: RelationshipAction
     """
     descs = instance.__jsonapi_rel_desc__.get(key, {})
-    if action == RelationshipActions.GET:
+    if action == Actions.GET:
         check_permission(instance, key, Permissions.VIEW)
         return descs.get(action, lambda x: getattr(x, key))
-    elif action == RelationshipActions.APPEND:
+    elif action == Actions.APPEND:
         check_permission(instance, key, Permissions.CREATE)
         return descs.get(action, lambda x, v: getattr(x, key).append(v))
-    elif action == RelationshipActions.SET:
+    elif action == Actions.SET:
         check_permission(instance, key, Permissions.EDIT)
         return descs.get(action, lambda x, v: setattr(x, key, v))
     else:
@@ -300,7 +259,8 @@ class JSONAPI(object):
         return {
             'self': '{}/{}/{}/relationships/{}'.format(self.prefix, api_type,
                                                        obj_id, rel_key),
-            'related': '{}/{}/{}/{}'.format(self.prefix, api_type, obj_id, rel_key)
+            'related': '{}/{}/{}/{}'.format(self.prefix, api_type, obj_id,
+                                            rel_key)
         }
 
     def _get_relationship(self, resource, rel_key, permission):
@@ -367,8 +327,8 @@ class JSONAPI(object):
         attrs_to_ignore = {'__mapper__', 'id'}
         if api_type in fields.keys():
             local_fields = list(map((
-                lambda x: instance.__jsonapi_map_to_py__[x]), fields[
-                    api_type]))
+                lambda x: instance.__jsonapi_map_to_py__.get(x)), fields.get(
+                    api_type)))
         else:
             local_fields = orm_desc_keys
 
@@ -379,7 +339,7 @@ class JSONAPI(object):
             api_key = instance.__jsonapi_map_to_api__[key]
 
             try:
-                desc = get_rel_desc(instance, key, RelationshipActions.GET)
+                desc = get_rel_desc(instance, key, Actions.GET)
             except PermissionDeniedError:
                 continue
 
@@ -446,7 +406,7 @@ class JSONAPI(object):
 
         for key in set(orm_desc_keys) - attrs_to_ignore:
             try:
-                desc = get_attr_desc(instance, key, AttributeActions.GET)
+                desc = get_attr_desc(instance, key, Actions.GET)
                 if key in local_fields:
                     to_ret['attributes'][instance.__jsonapi_map_to_api__[
                         key]] = desc(instance)
