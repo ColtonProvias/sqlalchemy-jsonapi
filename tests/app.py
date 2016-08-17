@@ -1,6 +1,9 @@
 """
 SQLAlchemy JSONAPI Test App.
 
+This app implements the backend of a web forum.  It's rather simple but
+provides us with a more comprehensive example for testing.
+
 Colton Provias <cj@coltonprovias.com>
 MIT License
 """
@@ -9,13 +12,15 @@ from uuid import uuid4
 
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
-from sqlalchemy_jsonapi import (INTERACTIVE_PERMISSIONS, Endpoint,
-                                FlaskJSONAPI, Method, Permissions,
-                                permission_test)
-from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
+from sqlalchemy_utils import (EmailType, IPAddressType, PasswordType,
+                              Timestamp, URLType, UUIDType)
+
+import enum
+
+# ================================ APP CONFIG ================================
 
 app = Flask(__name__)
 
@@ -26,29 +31,21 @@ db = SQLAlchemy(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
 app.config['SQLALCHEMY_ECHO'] = False
 
+#api = FlaskJSONAPI(app, db)
 
-class User(Timestamp, db.Model):
-    """Quick and dirty user model."""
+# ================================== MODELS ==================================
 
-    #: If __jsonapi_type__ is not provided, it will use the class name instead.
+
+class User(db.Model, Timestamp):
     __tablename__ = 'users'
 
-    id = Column(UUIDType, default=uuid4, primary_key=True)
-    username = Column(Unicode(30), unique=True, nullable=False)
+    id = Column(UUIDType, default=uuid4, primary_key=True, nullable=False)
     email = Column(EmailType, nullable=False)
-    password = Column(
-        PasswordType(schemes=['bcrypt']),
-        nullable=False)
+    display_name = Column(Unicode(100), nullable=False)
+    password = Column(PasswordType(schemes=['bcrypt']), nullable=False)
     is_admin = Column(Boolean, default=False)
-
-    @hybrid_property
-    def total_comments(self):
-        """
-        Total number of comments.
-
-        Provides an example of a computed property.
-        """
-        return self.comments.count()
+    last_ip_address = Column(IPAddressType)
+    website = Column(URLType)
 
     @validates('email')
     def validate_email(self, key, email):
@@ -56,119 +53,95 @@ class User(Timestamp, db.Model):
         assert '@' in email, 'Not an email'
         return email
 
-    @validates('username')
-    def validate_username(self, key, username):
-        """
-        Check the length of the username.
 
-        Here's hoping nobody submits something in unicode that is 31 characters
-        long!!
-        """
-        assert len(username) >= 4 and len(
-            username) <= 30, 'Must be 4 to 30 characters long.'
-        return username
+class Forum(db.Model, Timestamp):
+    __tablename__ = 'forums'
 
-    @validates('password')
-    def validate_password(self, key, password):
-        """Validate a password's length."""
-        assert len(password) >= 5, 'Password must be 5 characters or longer.'
-        return password
-
-    @jsonapi_access(Permissions.VIEW, 'password')
-    def view_password(self):
-        """ Never let the password be seen. """
-        return False
-
-    @jsonapi_access(Permissions.EDIT)
-    def prevent_edit(self):
-        """ Prevent editing for no reason. """
-        if request.view_args['api_type'] == 'blog-posts':
-            return True
-        return False
-
-    @jsonapi_access(Permissions.DELETE)
-    def allow_delete(self):
-        """ Just like a popular social media site, we won't delete users. """
-        return False
+    id = Column(UUIDType, default=uuid4, primary_key=True, nullable=False)
+    name = Column(Unicode(255), nullable=False)
+    can_public_read = Column(Boolean, default=True)
+    can_public_write = Column(Boolean, default=True)
 
 
-class BlogPost(Timestamp, db.Model):
-    """Post model, as if this is a blog."""
+class Thread(db.Model, Timestamp):
+    __tablename__ = 'threads'
 
+    id = Column(UUIDType, default=uuid4, primary_key=True, nullable=False)
+    forum_id = Column(UUIDType, ForeignKey('forums.id'), nullable=False)
+    started_by_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
+    title = Column(Unicode(255), nullable=False)
+
+
+class Post(db.Model, Timestamp):
     __tablename__ = 'posts'
 
-    id = Column(UUIDType, default=uuid4, primary_key=True)
-    title = Column(Unicode(100), nullable=False)
-    slug = Column(Unicode(100))
+    id = Column(UUIDType, default=uuid4, primary_key=True, nullable=False)
+    user_id = Column(UUIDType, ForeignKey('posts.id'), nullable=False)
     content = Column(UnicodeText, nullable=False)
-    is_published = Column(Boolean, default=False)
-    author_id = Column(UUIDType, ForeignKey('users.id'))
-
-    author = relationship('User',
-                          lazy='joined',
-                          backref=backref('posts', lazy='dynamic'))
-
-    @validates('title')
-    def validate_title(self, key, title):
-        """Keep titles from getting too long."""
-        assert len(title) >= 5 or len(
-            title) <= 100, 'Must be 5 to 100 characters long.'
-        return title
-
-    @jsonapi_access(Permissions.VIEW)
-    def allow_view(self):
-        """ Hide unpublished. """
-        return self.is_published
-
-    @jsonapi_access(INTERACTIVE_PERMISSIONS, 'logs')
-    def prevent_altering_of_logs(self):
-        return False
+    is_removed = Column(Boolean, default=False)
 
 
-class BlogComment(Timestamp, db.Model):
-    """Comment for each Post."""
-
-    __tablename__ = 'comments'
-
-    id = Column(UUIDType, default=uuid4, primary_key=True)
-    post_id = Column(UUIDType, ForeignKey('posts.id'))
-    author_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
-    content = Column(UnicodeText, nullable=False)
-
-    post = relationship('BlogPost',
-                        lazy='joined',
-                        backref=backref('comments', lazy='dynamic'))
-    author = relationship('User',
-                          lazy='joined',
-                          backref=backref('comments',
-                                          lazy='dynamic'))
+class ReportTypes(enum.Enum):
+    USER = 0
+    POST = 1
 
 
-class Log(Timestamp, db.Model):
-    __tablename__ = 'logs'
-    id = Column(UUIDType, default=uuid4, primary_key=True)
-    post_id = Column(UUIDType, ForeignKey('posts.id'))
-    user_id = Column(UUIDType, ForeignKey('users.id'))
+class Report(db.Model, Timestamp):
+    __tablename__ = 'reports'
 
-    post = relationship('BlogPost',
-                        lazy='joined',
-                        backref=backref('logs', lazy='dynamic'))
-    user = relationship('User',
-                        lazy='joined',
-                        backref=backref('logs', lazy='dynamic'))
+    id = Column(UUIDType, default=uuid4, primary_key=True, nullable=False)
+    report_type = Column(Enum(ReportTypes), nullable=False)
+    reporter_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
+    complaint = Column(UnicodeText, nullable=False)
 
-    @jsonapi_access(INTERACTIVE_PERMISSIONS)
-    def block_interactive(cls):
-        return False
+    __mapper_args__ = {
+        'polymorphic_identity': 'employee',
+        'polymorphic_on': report_type,
+        'with_polymorphic': '*'
+    }
 
 
-api = FlaskJSONAPI(app, db)
+class UserReport(db.Model):
+    __tablename__ = 'user_reports'
+
+    id = Column(
+        UUIDType,
+        ForeignKey('reports.id'),
+        default=uuid4,
+        primary_key=True,
+        nullable=False)
+    user_id = Column(UUIDType, ForeignKey('users.id'), nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': ReportTypes.USER}
 
 
-@api.wrap_handler(['blog-posts'], [Method.GET], [Endpoint.COLLECTION])
-def sample_override(next, *args, **kwargs):
-    return next(*args, **kwargs)
+class PostReport(db.Model):
+    __tablename__ = 'post_reports'
 
+    id = Column(
+        UUIDType,
+        ForeignKey('reports.id'),
+        default=uuid4,
+        primary_key=True,
+        nullable=False)
+    post_id = Column(UUIDType, ForeignKey('posts.id'), nullable=False)
+
+    __mapper_args__ = {'polymorphic_identity': ReportTypes.POST}
+
+# ============================== EVENT HANDLERS ==============================
+
+
+@app.before_request
+def handle_auth():
+    pass
+
+# ============================== API OVERRIDES  ==============================
+
+#@api.wrap_handler(['blog-posts'], [Method.GET], [Endpoint.COLLECTION])
+#def sample_override(next, *args, **kwargs):
+#    return next(*args, **kwargs)
+
+# ================================ APP RUNNER ================================
 
 if __name__ == '__main__':
     app.run()
