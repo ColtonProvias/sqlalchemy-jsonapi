@@ -21,6 +21,7 @@ pathtools==0.1.2
 py==1.4.31                # via pytest
 pycparser==2.14           # via cffi
 pytest==2.7.3
+simplejson==3.8.2
 six==1.10.0               # via bcrypt, sqlalchemy-utils
 SQLAlchemy-Utils==0.30.16
 sqlalchemy==1.0.13
