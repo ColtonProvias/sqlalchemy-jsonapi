@@ -85,7 +85,8 @@ class FlaskJSONAPI(object):
                  app=None,
                  sqla=None,
                  namespace='api',
-                 route_prefix='/api'):
+                 route_prefix='/api',
+                 options=None):
         """
         Initialize the adapter.  If app isn't passed here, it should be passed
         in init_app.
@@ -100,9 +101,10 @@ class FlaskJSONAPI(object):
         self._handler_chains = dict()
 
         if app is not None:
-            self._setup_adapter(namespace, route_prefix)
+            self._setup_adapter(namespace, route_prefix, options=options)
 
-    def init_app(self, app, sqla, namespace='api', route_prefix='/api'):
+    def init_app(self, app, sqla, namespace='api', route_prefix='/api',
+                 options=None):
         """
         Initialize the adapter if it hasn't already been initialized.
 
@@ -114,7 +116,7 @@ class FlaskJSONAPI(object):
         self.app = app
         self.sqla = sqla
 
-        self._setup_adapter(namespace, route_prefix)
+        self._setup_adapter(namespace, route_prefix, options=options)
 
     def wrap_handler(self, api_types, methods, endpoints):
         """
@@ -156,14 +158,18 @@ class FlaskJSONAPI(object):
 
         return wrapped
 
-    def _setup_adapter(self, namespace, route_prefix):
+    def _setup_adapter(self, namespace, route_prefix, options=None):
         """
         Initialize the serializer and loop through the views to generate them.
 
         :param namespace: Prefix for generated endpoints
         :param route_prefix: Prefix for route patterns
         """
-        self.serializer = JSONAPI(self.sqla.Model, prefix='{}://{}{}'.format(self.app.config['PREFERRED_URL_SCHEME'], self.app.config['SERVER_NAME'], route_prefix))
+        self.serializer = JSONAPI(self.sqla.Model,
+                                  prefix='{}://{}{}'.format(self.app.config['PREFERRED_URL_SCHEME'],
+                                                            self.app.config['SERVER_NAME'],
+                                                            route_prefix),
+                                  options=options)
         for view in views:
             method, endpoint = view
             pattern = route_prefix + endpoint.value
