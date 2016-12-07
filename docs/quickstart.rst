@@ -42,6 +42,18 @@ your models.  Let's do a simple collection serialization::
         response = serializer.get_collection(db.session, {}, 'users')
         return jsonify(response.data)
 
+The third argument to `get_collection` where `users` is specified is
+the model type. This is auto-generated from the model name, but you
+can control this using `__jsonapi_type_override__`.
+
+This is useful when you don't want hyphenated type names. For example,
+a model named `UserConfig` will have a generated type of `user-config`.
+You can change this declaratively on the model::
+
+    class UserConfig(Base):
+        __tablename__ = 'userconfig'
+        __jsonapi_type_override__ = 'userconfig'
+
 Deserialization
 ===============
 
