@@ -4,6 +4,7 @@ from sqlalchemy_jsonapi import errors
 
 from sqlalchemy_jsonapi.unittests.utils import testcases
 from sqlalchemy_jsonapi.unittests import models
+from sqlalchemy_jsonapi import __version__
 
 
 class PostCollection(testcases.SqlalchemyJsonapiTestCase):
@@ -88,7 +89,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             }
         }
 
@@ -190,7 +191,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             }
         }
         actual = response.data
@@ -567,7 +568,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'included': []
         }

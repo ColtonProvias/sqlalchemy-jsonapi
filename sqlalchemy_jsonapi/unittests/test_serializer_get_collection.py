@@ -4,6 +4,7 @@ from sqlalchemy_jsonapi import errors
 
 from sqlalchemy_jsonapi.unittests.utils import testcases
 from sqlalchemy_jsonapi.unittests import models
+from sqlalchemy_jsonapi import __version__
 
 
 class GetCollection(testcases.SqlalchemyJsonapiTestCase):
@@ -54,7 +55,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'included': []
         }
@@ -141,7 +142,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 }
             }],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'jsonapi': {
                 'version': '1.0'
@@ -217,7 +218,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'included': []
         }
@@ -291,7 +292,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'included': []
         }
@@ -360,7 +361,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
             'data': [],
             'included': [],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'jsonapi': {
                 'version': '1.0'
@@ -435,7 +436,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
             }],
             'included': [],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'jsonapi': {
                 'version': '1.0'
@@ -475,7 +476,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             }
         }
         actual = response.data
@@ -558,7 +559,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 }
             }],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'data': [{
                 'id': 1,
@@ -636,7 +637,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 }
             }],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'included': []
         }
@@ -748,7 +749,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 }
             }],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             }
         }
         actual = response.data
@@ -781,7 +782,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'included': [],
             'data': [{
@@ -913,7 +914,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
             'data': [],
             'included': [],
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'jsonapi': {
                 'version': '1.0'
