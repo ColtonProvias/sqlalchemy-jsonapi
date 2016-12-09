@@ -4,6 +4,7 @@ import json
 import unittest
 
 from sqlalchemy_jsonapi import errors
+from sqlalchemy_jsonapi import __version__
 
 
 class TestUserError(unittest.TestCase):
@@ -30,7 +31,7 @@ class TestUserError(unittest.TestCase):
                 'version': '1.0'
             },
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             }
         }
         expected = json.dumps(data), status_code

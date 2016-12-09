@@ -1,6 +1,9 @@
 import json
 from uuid import uuid4
 
+# Relative import here is to avoid circular import in setup.py.
+from ._version import __version__
+
 
 class BaseError(Exception):
     @property
@@ -160,7 +163,7 @@ def user_error(status_code, title, detail, pointer):
             'version': '1.0'
         },
         'meta': {
-            'sqlalchemy_jsonapi_version': '4.0.9'
+            'sqlalchemy_jsonapi_version': __version__
         }
     }
     return json.dumps(response), status_code
