@@ -18,7 +18,7 @@ import ast
 
 requirements = ['SQLAlchemy', 'inflection']
 
-with open('sqlalchemy_jsonapi/_version.py', 'r') as f:
+with open('sqlalchemy_jsonapi/__version__.py', 'r') as f:
     version = ast.parse(f.read()).body[0].value.s
 
 if sys.version_info[0] != 3 or sys.version_info[1] < 4:
