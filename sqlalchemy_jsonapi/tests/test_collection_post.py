@@ -8,7 +8,6 @@ from faker import Faker
 
 fake = Faker()
 
-# TODO: Bad query param
 
 def test_200_resource_creation(client):
     payload = {
@@ -21,10 +20,10 @@ def test_200_resource_creation(client):
             }
         }
     }
-    response = client.post(
-        '/api/users/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(201)
+    response = client.post('/api/users/',
+                           data=json.dumps(payload),
+                           content_type='application/vnd.api+json').validate(
+                               201)
     assert response.json_data['data']['type'] == 'users'
     user_id = response.json_data['data']['id']
     response = client.get('/api/users/{}/'.format(user_id)).validate(200)
@@ -49,68 +48,16 @@ def test_200_resource_creation_with_relationships(user, client):
             }
         }
     }
-    response = client.post(
-        '/api/blog-posts/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(201)
+    response = client.post('/api/blog-posts/',
+                           data=json.dumps(payload),
+                           content_type='application/vnd.api+json').validate(
+                               201)
     assert response.json_data['data']['type'] == 'blog-posts'
-    assert len(response.json_data['included']) == 0
     post_id = response.json_data['data']['id']
-    response = client.get('/api/blog-posts/{}/'.format(
-        post_id)).validate(200)
-
-def test_200_resource_creation_with_relationships_and_include(user, client):
-    payload = {
-        'data': {
-            'type': 'blog-posts',
-            'attributes': {
-                'title': 'Some title',
-                'content': 'Hello, World!',
-                'is-published': True
-            },
-            'relationships': {
-                'author': {
-                    'data': {
-                        'type': 'users',
-                        'id': str(user.id)
-                    }
-                }
-            }
-        }
-    }
-    response = client.post(
-        '/api/blog-posts/?include=author',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(201)
-    assert response.json_data['data']['type'] == 'blog-posts'
+    response = client.get('/api/blog-posts/{}/?include=author'.format(post_id)).validate(200)
     assert response.json_data['data']['relationships']['author']['data'][
-        'id'] == str(user.id)
-    assert len(response.json_data['included']) == 1
-    for data in response.json_data['included']:
-        assert data['type'] == 'users'
-    post_id = response.json_data['data']['id']
-    response = client.get('/api/blog-posts/{}/?include=author'.format(
-        post_id)).validate(200)
-
-def test_200_resource_creation_with_sparse_fieldset(client):
-    payload = {
-        'data': {
-            'type': 'users',
-            'attributes': {
-                'username': fake.user_name(),
-                'email': 'user@example.com',
-                'password': 'password'
-            }
-        }
-    }
-    response = client.post(
-        '/api/users/?fields[users]=username',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(201)
-    assert response.json_data['data']['type'] == 'users'
-    assert set(response.json_data['data']['attributes'].keys()) == set(['username'])
-    user_id = response.json_data['data']['id']
-    response = client.get('/api/users/{}/'.format(user_id)).validate(200)
+        'id'
+    ] == str(user.id)
 
 
 def test_403_when_access_is_denied(client):

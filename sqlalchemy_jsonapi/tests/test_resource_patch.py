@@ -7,11 +7,6 @@ from sqlalchemy_jsonapi.errors import (
     MissingTypeError)
 
 
-# TODO: Sparse Fieldsets
-# TODO: Related Includes
-# TODO: Bad query param
-
-
 def test_200(client, post, user):
     payload = {
         'data': {
@@ -30,14 +25,14 @@ def test_200(client, post, user):
             }
         }
     }
-    response = client.patch(
-        '/api/blog-posts/{}/'.format(post.id),
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(200)
+    response = client.patch('/api/blog-posts/{}/'.format(post.id),
+                            data=json.dumps(payload),
+                            content_type='application/vnd.api+json').validate(
+                                200)
     assert response.json_data['data']['id'] == str(post.id)
     assert response.json_data['data']['type'] == 'blog-posts'
-    assert response.json_data['data']['attributes'][
-        'title'] == 'I just lost the game'
+    assert response.json_data['data']['attributes']['title'
+                                                    ] == 'I just lost the game'
 
 
 def test_400_missing_type(post, client):
@@ -50,7 +45,8 @@ def test_400_missing_type(post, client):
 def test_404_resource_not_found(client):
     client.patch('/api/blog-posts/{}/'.format(uuid4()),
                  content_type='application/vnd.api+json',
-                 data='{}').validate(404, ResourceNotFoundError)
+                 data='{}').validate(
+                     404, ResourceNotFoundError)
 
 
 def test_404_related_resource_not_found(client, post):

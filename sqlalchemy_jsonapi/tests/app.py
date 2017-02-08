@@ -12,9 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
-from sqlalchemy_jsonapi import (INTERACTIVE_PERMISSIONS, Endpoint,
-                                FlaskJSONAPI, Method, Permissions,
-                                permission_test)
+from sqlalchemy_jsonapi import FlaskJSONAPI, Permissions, permission_test, Method, Endpoint, INTERACTIVE_PERMISSIONS
 from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
 
 app = Flask(__name__)
@@ -36,9 +34,9 @@ class User(Timestamp, db.Model):
     id = Column(UUIDType, default=uuid4, primary_key=True)
     username = Column(Unicode(30), unique=True, nullable=False)
     email = Column(EmailType, nullable=False)
-    password = Column(
-        PasswordType(schemes=['bcrypt']),
-        nullable=False)
+    password = Column(PasswordType(schemes=['bcrypt']),
+                      nullable=False,
+                      info={'allow_serialize': False})
     is_admin = Column(Boolean, default=False)
 
     @hybrid_property
@@ -106,7 +104,8 @@ class BlogPost(Timestamp, db.Model):
 
     author = relationship('User',
                           lazy='joined',
-                          backref=backref('posts', lazy='dynamic'))
+                          backref=backref('posts',
+                                          lazy='dynamic'))
 
     @validates('title')
     def validate_title(self, key, title):
@@ -137,7 +136,8 @@ class BlogComment(Timestamp, db.Model):
 
     post = relationship('BlogPost',
                         lazy='joined',
-                        backref=backref('comments', lazy='dynamic'))
+                        backref=backref('comments',
+                                        lazy='dynamic'))
     author = relationship('User',
                           lazy='joined',
                           backref=backref('comments',
@@ -152,10 +152,12 @@ class Log(Timestamp, db.Model):
 
     post = relationship('BlogPost',
                         lazy='joined',
-                        backref=backref('logs', lazy='dynamic'))
+                        backref=backref('logs',
+                                        lazy='dynamic'))
     user = relationship('User',
                         lazy='joined',
-                        backref=backref('logs', lazy='dynamic'))
+                        backref=backref('logs',
+                                        lazy='dynamic'))
 
     @permission_test(INTERACTIVE_PERMISSIONS)
     def block_interactive(cls):

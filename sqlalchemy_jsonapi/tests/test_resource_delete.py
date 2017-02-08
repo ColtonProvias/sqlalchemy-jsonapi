@@ -4,9 +4,6 @@ from sqlalchemy_jsonapi.errors import (
     PermissionDeniedError, ResourceNotFoundError, ResourceTypeNotFoundError)
 
 
-# TODO: Bad query param
-
-
 def test_200_on_success(comment, client):
     client.delete('/api/blog-comments/{}/'.format(comment.id)).validate(204)
     client.get('/api/blog-comments/{}/'.format(comment.id)).validate(
