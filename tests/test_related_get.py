@@ -1,4 +1,4 @@
-"""from uuid import uuid4
+from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (RelationshipNotFoundError,
                                        ResourceNotFoundError)
@@ -33,4 +33,3 @@ def test_404_when_relationship_not_found(post, client):
 def test_404_when_resource_not_found(client):
     client.get('/api/blog-posts/{}/comments/'.format(uuid4())).validate(
         404, ResourceNotFoundError)
-"""

@@ -1,4 +1,4 @@
-"""import json
+import json
 
 from sqlalchemy_jsonapi.errors import (
     InvalidTypeForEndpointError, MissingTypeError, PermissionDeniedError,
@@ -9,7 +9,6 @@ from faker import Faker
 fake = Faker()
 
 # TODO: Bad query param
-
 
 def test_200_resource_creation(client):
     payload = {
@@ -57,8 +56,8 @@ def test_200_resource_creation_with_relationships(user, client):
     assert response.json_data['data']['type'] == 'blog-posts'
     assert len(response.json_data['included']) == 0
     post_id = response.json_data['data']['id']
-    response = client.get('/api/blog-posts/{}/'.format(post_id)).validate(200)
-
+    response = client.get('/api/blog-posts/{}/'.format(
+        post_id)).validate(200)
 
 def test_200_resource_creation_with_relationships_and_include(user, client):
     payload = {
@@ -93,7 +92,6 @@ def test_200_resource_creation_with_relationships_and_include(user, client):
     response = client.get('/api/blog-posts/{}/?include=author'.format(
         post_id)).validate(200)
 
-
 def test_200_resource_creation_with_sparse_fieldset(client):
     payload = {
         'data': {
@@ -110,19 +108,17 @@ def test_200_resource_creation_with_sparse_fieldset(client):
         data=json.dumps(payload),
         content_type='application/vnd.api+json').validate(201)
     assert response.json_data['data']['type'] == 'users'
-    assert set(response.json_data['data']['attributes'].keys()) == set(
-        ['username'])
+    assert set(response.json_data['data']['attributes'].keys()) == set(['username'])
     user_id = response.json_data['data']['id']
     response = client.get('/api/users/{}/'.format(user_id)).validate(200)
 
 
 def test_403_when_access_is_denied(client):
     payload = {'data': {'type': 'logs'}}
-    client.post(
-        '/api/logs/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(
-            403, PermissionDeniedError)
+    client.post('/api/logs/',
+                data=json.dumps(payload),
+                content_type='application/vnd.api+json').validate(
+                    403, PermissionDeniedError)
 
 
 def test_409_when_id_already_exists(user, client):
@@ -137,24 +133,23 @@ def test_409_when_id_already_exists(user, client):
             }
         }
     }
-    client.post(
-        '/api/users/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(409, ValidationError)
+    client.post('/api/users/',
+                data=json.dumps(payload),
+                content_type='application/vnd.api+json').validate(
+                    409, ValidationError)
 
 
 def test_409_when_type_doesnt_match_endpoint(client):
     payload = {'data': {'type': 'blog-posts'}}
-    client.post(
-        '/api/users/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(
-            409, InvalidTypeForEndpointError)
+    client.post('/api/users/',
+                data=json.dumps(payload),
+                content_type='application/vnd.api+json').validate(
+                    409, InvalidTypeForEndpointError)
 
 
 def test_409_when_missing_content_type(client):
-    client.post(
-        '/api/users/', data='{}').validate(409, MissingContentTypeError)
+    client.post('/api/users/',
+                data='{}').validate(409, MissingContentTypeError)
 
 
 def test_409_when_missing_type(client):
@@ -167,11 +162,10 @@ def test_409_when_missing_type(client):
             }
         }
     }
-    client.post(
-        '/api/users/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(409,
-                                                          MissingTypeError)
+    client.post('/api/users/',
+                data=json.dumps(payload),
+                content_type='application/vnd.api+json').validate(
+                    409, MissingTypeError)
 
 
 def test_409_for_invalid_value(client):
@@ -185,10 +179,10 @@ def test_409_for_invalid_value(client):
             }
         }
     }
-    client.post(
-        '/api/users/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(409, ValidationError)
+    client.post('/api/users/',
+                data=json.dumps(payload),
+                content_type='application/vnd.api+json').validate(
+                    409, ValidationError)
 
 
 def test_409_for_wrong_field_name(client):
@@ -203,8 +197,7 @@ def test_409_for_wrong_field_name(client):
             }
         }
     }
-    client.post(
-        '/api/users/',
-        data=json.dumps(payload),
-        content_type='application/vnd.api+json').validate(409, ValidationError)
-"""
+    client.post('/api/users/',
+                data=json.dumps(payload),
+                content_type='application/vnd.api+json').validate(
+                    409, ValidationError)

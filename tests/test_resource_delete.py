@@ -1,7 +1,8 @@
-"""from uuid import uuid4
+from uuid import uuid4
 
 from sqlalchemy_jsonapi.errors import (
     PermissionDeniedError, ResourceNotFoundError, ResourceTypeNotFoundError)
+
 
 # TODO: Bad query param
 
@@ -25,4 +26,3 @@ def test_403_on_permission_denied(user, client):
 def test_404_on_resource_not_found(client):
     client.delete('/api/blog-comments/{}/'.format(uuid4())).validate(
         404, ResourceNotFoundError)
-"""

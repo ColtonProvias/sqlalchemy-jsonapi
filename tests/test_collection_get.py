@@ -1,42 +1,16 @@
-from schema import Schema
-from jsonschema import validate
+from sqlalchemy_jsonapi.errors import BadRequestError, NotSortableError
 
-
-def test_200_with_no_querystring():
-    pass
-
-
-def describe_bad_query_params():
-    def test_bad_query_param():
-        pass
-
-def describe_resource_inclusions():
-    pass
-
-def describe_sparse_fieldsets():
-    pass
-
-def describe_sorting():
-    pass
-
-def describe_pagination():
-    pass
-
-def describe_filtering():
-    pass
-
-
-"""from sqlalchemy_jsonapi.errors import BadRequestError, NotSortableError
 
 # TODO: Vanilla
-
 
 def test_200_with_no_querystring(bunch_of_posts, client):
     response = client.get('/api/blog-posts').validate(200)
     assert response.json_data['data'][0]['type'] == 'blog-posts'
     assert response.json_data['data'][0]['id']
 
+
 # TODO: Bad Query Param
+
 
 # TODO: Resource Inclusions
 
@@ -55,13 +29,13 @@ def test_200_with_including_model_and_including_inbetween(bunch_of_posts,
     for data in response.json_data['included']:
         assert data['type'] in ['blog-posts', 'users']
 
-
 def test_200_with_multiple_includes(bunch_of_posts, client):
     response = client.get('/api/blog-posts/?include=comments,author').validate(
         200)
     assert response.json_data['data'][0]['type'] == 'blog-posts'
     for data in response.json_data['included']:
         assert data['type'] in ['blog-comments', 'users']
+
 
 # TODO: Sparse Fieldsets
 
@@ -72,7 +46,6 @@ def test_200_with_single_field(bunch_of_posts, client):
     for item in response.json_data['data']:
         assert {'title'} == set(item['attributes'].keys())
         assert len(item['relationships']) == 0
-
 
 def test_200_with_bad_field(bunch_of_posts, client):
     response = client.get(
@@ -104,6 +77,7 @@ def test_200_with_single_field_across_a_relationship(bunch_of_posts, client):
         assert len(item['attributes']) == 0
         assert {'author'} == set(item['relationships'].keys())
 
+
 # TODO: Sorting
 
 
@@ -133,6 +107,7 @@ def test_409_when_given_a_missing_field_for_sorting(bunch_of_posts, client):
     client.get('/api/blog-posts/?sort=never_gonna_give_you_up').validate(
         409, NotSortableError)
 
+
 # TODO: Pagination
 
 
@@ -157,5 +132,5 @@ def test_400_when_provided_crap_data_for_pagination(bunch_of_posts, client):
     client.get('/api/blog-posts/?page[offset]=5&page[limit]=crap').validate(
         400, BadRequestError)
 
+
 # TODO: Filtering
-"""

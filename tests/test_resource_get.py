@@ -1,5 +1,6 @@
-"""from sqlalchemy_jsonapi.errors import ResourceNotFoundError, PermissionDeniedError
+from sqlalchemy_jsonapi.errors import ResourceNotFoundError, PermissionDeniedError
 from uuid import uuid4
+
 
 # TODO: Sparse Fieldsets
 # TODO: Related Includes
@@ -73,4 +74,3 @@ def test_200_with_single_field_across_a_relationship(post, client):
         assert {'title', 'content'} == set(item['attributes'].keys())
         assert len(item['attributes']) == 0
         assert {'author'} == set(item['relationships'].keys())
-"""

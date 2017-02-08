@@ -1,4 +1,4 @@
-"""from app import api
+from app import api
 import uuid
 
 
@@ -10,4 +10,3 @@ def test_include_different_types_same_id(session, comment):
     r = api.serializer.get_resource(session, {'include': 'post,author'},
                                     'blog-comments', comment.id)
     assert len(r.data['included']) == 2
-"""
