@@ -2,7 +2,7 @@
 Flask
 =====
 
-.. currentmodule:: sqlalchemy_jsonapi.flaskext
+.. currentmodule:: sqlalchemy_jsonapi.flask
 
 To those who use Flask, setting up SQLAlchemy-JSONAPI can be extremely complex
 and frustrating.  Let's look at an example::

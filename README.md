@@ -2,8 +2,6 @@
 
 [![Build Status](https://travis-ci.org/ColtonProvias/sqlalchemy-jsonapi.svg?branch=master)](https://travis-ci.org/ColtonProvias/sqlalchemy-jsonapi)
 
-**WARNING: The master branch is currently breaking backwards compatibility and thus has been bumped to 5.0.0.  Builds are likely to fail during 5.0.0 development.**
-
 [JSON API](http://jsonapi.org/) implementation for use with
 [SQLAlchemy](http://www.sqlalchemy.org/).
 

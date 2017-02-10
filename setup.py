@@ -14,18 +14,14 @@ GitHub at https://github.com/coltonprovias/sqlalchemy-jsonapi
 
 from setuptools import setup
 import sys
-import ast
 
 requirements = ['SQLAlchemy', 'inflection']
 
-with open('sqlalchemy_jsonapi/_version.py', 'r') as f:
-    version = ast.parse(f.read()).body[0].value.s
-
 if sys.version_info[0] != 3 or sys.version_info[1] < 4:
-    requirements.append('enum34')
+      requirements.append('enum34')
 
 setup(name='SQLAlchemy-JSONAPI',
-      version=version,
+      version='4.0.9',
       url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',

@@ -1,44 +1,11 @@
-from schema import Schema
-from jsonschema import validate
-
-
-def test_200_with_no_querystring():
-    pass
-
-
-def describe_bad_query_params():
-    def test_bad_query_param():
-        pass
-
-def describe_resource_inclusions():
-    pass
-
-def describe_sparse_fieldsets():
-    pass
-
-def describe_sorting():
-    pass
-
-def describe_pagination():
-    pass
-
-def describe_filtering():
-    pass
-
-
-"""from sqlalchemy_jsonapi.errors import BadRequestError, NotSortableError
-
-# TODO: Vanilla
+from sqlalchemy_jsonapi.errors import (
+    BadRequestError, NotAnAttributeError, NotSortableError)
 
 
 def test_200_with_no_querystring(bunch_of_posts, client):
     response = client.get('/api/blog-posts').validate(200)
     assert response.json_data['data'][0]['type'] == 'blog-posts'
     assert response.json_data['data'][0]['id']
-
-# TODO: Bad Query Param
-
-# TODO: Resource Inclusions
 
 
 def test_200_with_single_included_model(bunch_of_posts, client):
@@ -49,46 +16,31 @@ def test_200_with_single_included_model(bunch_of_posts, client):
 
 def test_200_with_including_model_and_including_inbetween(bunch_of_posts,
                                                           client):
-    response = client.get('/api/blog-comments/?include=post.author').validate(
-        200)
+    response = client.get('/api/blog-comments/?include=post.author').validate(200)
     assert response.json_data['data'][0]['type'] == 'blog-comments'
     for data in response.json_data['included']:
         assert data['type'] in ['blog-posts', 'users']
 
 
 def test_200_with_multiple_includes(bunch_of_posts, client):
-    response = client.get('/api/blog-posts/?include=comments,author').validate(
-        200)
+    response = client.get('/api/blog-posts/?include=comments,author').validate(200)
     assert response.json_data['data'][0]['type'] == 'blog-posts'
     for data in response.json_data['included']:
         assert data['type'] in ['blog-comments', 'users']
 
-# TODO: Sparse Fieldsets
-
 
 def test_200_with_single_field(bunch_of_posts, client):
-    response = client.get(
-        '/api/blog-posts/?fields[blog-posts]=title').validate(200)
+    response = client.get('/api/blog-posts/?fields[blog-posts]=title').validate(200)
     for item in response.json_data['data']:
         assert {'title'} == set(item['attributes'].keys())
         assert len(item['relationships']) == 0
 
 
-def test_200_with_bad_field(bunch_of_posts, client):
-    response = client.get(
-        '/api/blog-posts/?fields[blog-posts]=titles').validate(200)
-    for item in response.json_data['data']:
-        assert set() == set(item['attributes'].keys())
-        assert len(item['relationships']) == 0
-
-
 def test_200_with_multiple_fields(bunch_of_posts, client):
-    response = client.get(
-        '/api/blog-posts/?fields[blog-posts]=title,content,is-published').validate(
-            200)
+    response = client.get('/api/blog-posts/?fields[blog-posts]=title,content,is-published').validate(
+        200)
     for item in response.json_data['data']:
-        assert {'title', 'content', 'is-published'} == set(item[
-            'attributes'].keys())
+        assert {'title', 'content', 'is-published'} == set(item['attributes'].keys())
         assert len(item['relationships']) == 0
 
 
@@ -103,8 +55,6 @@ def test_200_with_single_field_across_a_relationship(bunch_of_posts, client):
         assert len(item['attributes'].keys()) == 0
         assert len(item['attributes']) == 0
         assert {'author'} == set(item['relationships'].keys())
-
-# TODO: Sorting
 
 
 def test_200_sorted_response(bunch_of_posts, client):
@@ -133,29 +83,23 @@ def test_409_when_given_a_missing_field_for_sorting(bunch_of_posts, client):
     client.get('/api/blog-posts/?sort=never_gonna_give_you_up').validate(
         409, NotSortableError)
 
-# TODO: Pagination
-
 
 def test_200_paginated_response_by_page(bunch_of_posts, client):
-    response = client.get(
-        '/api/blog-posts/?page[number]=2&page[size]=5').validate(200)
+    response = client.get('/api/blog-posts/?page[number]=2&page[size]=5').validate(
+        200)
     assert len(response.json_data['data']) == 5
 
 
 def test_200_paginated_response_by_offset(bunch_of_posts, client):
-    response = client.get(
-        '/api/blog-posts/?page[offset]=5&page[limit]=5').validate(200)
+    response = client.get('/api/blog-posts/?page[offset]=5&page[limit]=5').validate(
+        200)
     assert len(response.json_data['data']) == 5
 
 
 def test_200_when_pagination_is_out_of_range(bunch_of_posts, client):
-    client.get('/api/blog-posts/?page[offset]=999999&page[limit]=5').validate(
-        200)
+    client.get('/api/blog-posts/?page[offset]=999999&page[limit]=5').validate(200)
 
 
 def test_400_when_provided_crap_data_for_pagination(bunch_of_posts, client):
     client.get('/api/blog-posts/?page[offset]=5&page[limit]=crap').validate(
         400, BadRequestError)
-
-# TODO: Filtering
-"""

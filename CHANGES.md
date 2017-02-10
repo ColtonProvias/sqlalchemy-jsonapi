@@ -1,10 +1,9 @@
 # SQLAlchemy-JSONAPI Changelog
 
-## 5.0.0
+## 4.0.9
 
 *Unreleased*
 
-* BREAKING: The query data is now expected for all endpoints
 * Fixed bug during testing in delete_relationship where returned resource was missing data key
 * Fixed bug during testing in patch_resource where field check was failing
 
