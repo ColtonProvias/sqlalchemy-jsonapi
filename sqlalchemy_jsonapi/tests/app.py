@@ -12,7 +12,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
-from sqlalchemy_jsonapi import FlaskJSONAPI, Permissions, permission_test, Method, Endpoint, INTERACTIVE_PERMISSIONS
+from sqlalchemy_jsonapi import (
+    FlaskJSONAPI, Permissions, permission_test, Method, Endpoint,
+    INTERACTIVE_PERMISSIONS)
 from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
 
 app = Flask(__name__)

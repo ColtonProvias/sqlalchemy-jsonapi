@@ -4,14 +4,12 @@ Serializer
 Colton J. Provias
 MIT License
 """
-
-from collections import MutableMapping
 from enum import Enum
-from inflection import pluralize, dasherize, parameterize, tableize, underscore
+
+from inflection import dasherize, tableize, underscore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.interfaces import MANYTOONE
 from sqlalchemy.util.langhelpers import iterate_attributes
-from pprint import pprint
 
 from .errors import (BadRequestError, InvalidTypeForEndpointError,
                      MissingTypeError, NotSortableError, PermissionDeniedError,
@@ -128,6 +126,7 @@ class PermissionTest(object):
         fn.__jsonapi_check_permission__ |= set(self.permission)
         return fn
 
+
 #: More consistent name for the decorators
 permission_test = PermissionTest
 
@@ -227,7 +226,8 @@ class JSONAPI(object):
                 continue
 
             prepped_name = self._api_type_for_model(model)
-            api_type = getattr(model, '__jsonapi_type_override__', prepped_name)
+            api_type = getattr(
+                model, '__jsonapi_type_override__', prepped_name)
 
             model_keys = set(model.__mapper__.all_orm_descriptors.keys())
             model_keys |= set(model.__mapper__.relationships.keys())
@@ -236,8 +236,10 @@ class JSONAPI(object):
             model.__jsonapi_rel_desc__ = {}
             model.__jsonapi_permissions__ = {}
             model.__jsonapi_type__ = api_type
-            model.__jsonapi_map_to_py__ = {dasherize(underscore(x)): x for x in model_keys}
-            model.__jsonapi_map_to_api__ = {x: dasherize(underscore(x)) for x in model_keys}
+            model.__jsonapi_map_to_py__ = {
+                dasherize(underscore(x)): x for x in model_keys}
+            model.__jsonapi_map_to_api__ = {
+                x: dasherize(underscore(x)) for x in model_keys}
 
             for prop_name, prop_value in iterate_attributes(model):
 
@@ -292,8 +294,10 @@ class JSONAPI(object):
 
     def _lazy_relationship(self, api_type, obj_id, rel_key):
         return {
-            'self': '{}/{}/{}/relationships/{}'.format(self.prefix, api_type, obj_id, rel_key),
-            'related': '{}/{}/{}/{}'.format(self.prefix, api_type, obj_id, rel_key)
+            'self': '{}/{}/{}/relationships/{}'.format(
+                self.prefix, api_type, obj_id, rel_key),
+            'related': '{}/{}/{}/{}'.format(
+                self.prefix, api_type, obj_id, rel_key)
         }
 
     def _get_relationship(self, resource, rel_key, permission):
@@ -359,7 +363,9 @@ class JSONAPI(object):
         }
         attrs_to_ignore = {'__mapper__', 'id'}
         if api_type in fields.keys():
-            local_fields = list(map((lambda x: instance.__jsonapi_map_to_py__[x]), fields[api_type]))
+            local_fields = list(map((
+                lambda x: instance.__jsonapi_map_to_py__[x]),
+                fields[api_type]))
         else:
             local_fields = orm_desc_keys
 
@@ -384,23 +390,27 @@ class JSONAPI(object):
                 if api_key in include.keys():
                     related = desc(instance)
                     if related is not None:
-                        perm = get_permission_test(related, None, Permissions.VIEW)
-                    if key in local_fields and (related is None or not perm(related)):
+                        perm = get_permission_test(
+                            related, None, Permissions.VIEW)
+                    if (key in local_fields
+                            and (related is None or not perm(related))):
                         to_ret['relationships'][api_key]['data'] = None
                         continue
                     if key in local_fields:
-                        to_ret['relationships'][api_key]['data'] = self._render_short_instance(related)
+                        to_ret['relationships'][api_key]['data'] = self._render_short_instance(related)  # NOQA
                     new_include = self._parse_include(include[api_key])
-                    built = self._render_full_resource(related, new_include, fields)
+                    built = self._render_full_resource(
+                        related, new_include, fields)
                     included = built.pop('included')
                     to_ret['included'].update(included)
-                    to_ret['included'][(related.__jsonapi_type__, related.id)] = built
+                    to_ret['included'][(related.__jsonapi_type__, related.id)] = built  # NOQA
 
             else:
 
                 if key in local_fields:
                     to_ret['relationships'][api_key] = {
-                        'links': self._lazy_relationship(api_type, instance.id, api_key),
+                        'links': self._lazy_relationship(
+                            api_type, instance.id, api_key),
                     }
 
                 if api_key not in include.keys():
@@ -418,20 +428,21 @@ class JSONAPI(object):
                         continue
 
                     if key in local_fields:
-                        to_ret['relationships'][api_key]['data'].append(self._render_short_instance(item))
+                        to_ret['relationships'][api_key]['data'].append(
+                            self._render_short_instance(item))
 
                     new_include = self._parse_include(include[api_key])
                     built = self._render_full_resource(item, new_include,
                                                        fields)
                     included = built.pop('included')
                     to_ret['included'].update(included)
-                    to_ret['included'][(item.__jsonapi_type__, item.id)] = built
+                    to_ret['included'][(item.__jsonapi_type__, item.id)] = built  # NOQA
 
         for key in set(orm_desc_keys) - attrs_to_ignore:
             try:
                 desc = get_attr_desc(instance, key, AttributeActions.GET)
                 if key in local_fields:
-                    to_ret['attributes'][instance.__jsonapi_map_to_api__[key]] = desc(instance)
+                    to_ret['attributes'][instance.__jsonapi_map_to_api__[key]] = desc(instance)  # NOQA
             except PermissionDeniedError:
                 continue
 
@@ -756,7 +767,7 @@ class JSONAPI(object):
                                RelationshipActions.GET)(resource)
 
         if relationship.direction == MANYTOONE:
-            if related == None:
+            if related is None:
                 response.data['data'] = None
             else:
                 try:
@@ -801,7 +812,7 @@ class JSONAPI(object):
         try:
             if relationship.direction == MANYTOONE:
                 if not isinstance(json_data['data'], dict)\
-                        and json_data['data'] != None:
+                        and json_data['data'] is not None:
                     raise ValidationError('Provided data must be a hash.')
 
                 related = getattr(resource, relationship.key)
@@ -811,7 +822,7 @@ class JSONAPI(object):
                 setter = get_rel_desc(resource, relationship.key,
                                       RelationshipActions.SET)
 
-                if json_data['data'] == None:
+                if json_data['data'] is None:
                     setter(resource, None)
                 else:
                     to_relate = self._fetch_resource(
@@ -909,7 +920,9 @@ class JSONAPI(object):
                     session, json_data['data']['relationships'][api_key],
                     model.__jsonapi_type__, resource.id, api_key)
 
-            data_keys = set(map((lambda x: resource.__jsonapi_map_to_py__.get(x, None)), json_data['data']['attributes'].keys()))
+            data_keys = set(map((
+                lambda x: resource.__jsonapi_map_to_py__.get(x, None)),
+                json_data['data']['attributes'].keys()))
             model_keys = set(orm_desc_keys) - attrs_to_ignore
 
             if not data_keys <= model_keys:
@@ -920,7 +933,7 @@ class JSONAPI(object):
 
             for key in data_keys & model_keys:
                 setter = get_attr_desc(resource, key, AttributeActions.SET)
-                setter(resource, json_data['data']['attributes'][resource.__jsonapi_map_to_api__[key]])
+                setter(resource, json_data['data']['attributes'][resource.__jsonapi_map_to_api__[key]])  # NOQA
             session.commit()
         except IntegrityError as e:
             session.rollback()
@@ -960,7 +973,9 @@ class JSONAPI(object):
         data['data'].setdefault('relationships', {})
         data['data'].setdefault('attributes', {})
 
-        data_keys = set(map((lambda x: resource.__jsonapi_map_to_py__.get(x, None)), data['data'].get('relationships', {}).keys()))
+        data_keys = set(map((
+            lambda x: resource.__jsonapi_map_to_py__.get(x, None)),
+            data['data'].get('relationships', {}).keys()))
         model_keys = set(resource.__mapper__.relationships.keys())
         if not data_keys <= model_keys:
             raise BadRequestError(
@@ -1036,7 +1051,9 @@ class JSONAPI(object):
                                              Permissions.CREATE)
                         setters.append([setter, to_relate])
 
-            data_keys = set(map((lambda x: resource.__jsonapi_map_to_py__.get(x, None)), data['data'].get('attributes', {}).keys()))
+            data_keys = set(map((
+                lambda x: resource.__jsonapi_map_to_py__.get(x, None)),
+                data['data'].get('attributes', {}).keys()))
             model_keys = set(orm_desc_keys) - attrs_to_ignore
 
             if not data_keys <= model_keys:
