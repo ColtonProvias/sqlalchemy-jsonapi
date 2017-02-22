@@ -35,6 +35,7 @@ class JSONAPIEncoder(json.JSONEncoder):
             return str(value)
         return json.JSONEncoder.default(self, value)
 
+
 #: The views to generate
 views = [
     (Method.GET, Endpoint.COLLECTION), (Method.GET, Endpoint.RESOURCE),
@@ -163,7 +164,10 @@ class FlaskJSONAPI(object):
         :param namespace: Prefix for generated endpoints
         :param route_prefix: Prefix for route patterns
         """
-        self.serializer = JSONAPI(self.sqla.Model, prefix='{}://{}{}'.format(self.app.config['PREFERRED_URL_SCHEME'], self.app.config['SERVER_NAME'], route_prefix))
+        self.serializer = JSONAPI(
+            self.sqla.Model, prefix='{}://{}{}'.format(
+                self.app.config['PREFERRED_URL_SCHEME'],
+                self.app.config['SERVER_NAME'], route_prefix))
         for view in views:
             method, endpoint = view
             pattern = route_prefix + endpoint.value

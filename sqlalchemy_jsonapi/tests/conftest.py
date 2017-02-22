@@ -87,10 +87,9 @@ def user(session):
 
 @pytest.fixture
 def post(user, session):
-    new_post = BlogPost(author=user,
-                    title=fake.sentence(),
-                    content=fake.paragraph(),
-                    is_published=True)
+    new_post = BlogPost(
+        author=user, title=fake.sentence(), content=fake.paragraph(),
+        is_published=True)
     session.add(new_post)
     session.commit()
     return new_post
@@ -98,10 +97,9 @@ def post(user, session):
 
 @pytest.fixture
 def unpublished_post(user, session):
-    new_post = BlogPost(author=user,
-                    title=fake.sentence(),
-                    content=fake.paragraph(),
-                    is_published=False)
+    new_post = BlogPost(
+        author=user, title=fake.sentence(), content=fake.paragraph(),
+        is_published=False)
     session.add(new_post)
     session.commit()
     return new_post
@@ -110,13 +108,12 @@ def unpublished_post(user, session):
 @pytest.fixture
 def bunch_of_posts(user, session):
     for x in range(30):
-        new_post = BlogPost(author=user,
-                        title=fake.sentence(),
-                        content=fake.paragraph(),
-                        is_published=fake.boolean())
+        new_post = BlogPost(
+            author=user, title=fake.sentence(), content=fake.paragraph(),
+            is_published=fake.boolean())
         session.add(new_post)
-        new_post.comments.append(BlogComment(author=user,
-                                         content=fake.paragraph()))
+        new_post.comments.append(
+            BlogComment(author=user, content=fake.paragraph()))
     session.commit()
 
 
