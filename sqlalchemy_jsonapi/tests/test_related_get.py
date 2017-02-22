@@ -5,7 +5,8 @@ from sqlalchemy_jsonapi.errors import (RelationshipNotFoundError,
 
 
 def test_200_result_of_to_one(post, client):
-    response = client.get('/api/blog-posts/{}/author/'.format(post.id)).validate(
+    response = client.get(
+        '/api/blog-posts/{}/author/'.format(post.id)).validate(
         200)
     assert response.json_data['data']['type'] == 'users'
 
