@@ -1,2 +1,4 @@
 [run]
-omit=sqlalchemy_jsonapi/tests/*
+omit=sqlalchemy_jsonapi/tests/*, .tox/*, sqlalchemy_jsonapi/unittests/*
+[report]
+show_missing = True
