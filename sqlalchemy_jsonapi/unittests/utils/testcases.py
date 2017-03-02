@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 
 
 class SqlalchemyJsonapiTestCase(unittest.TestCase):
-    """Base test case for all tests."""
+    """Base testcase for SQLAclehmy-related tests."""
 
     def setUp(self, *args, **kwargs):
         """Configure sqlalchemy and session."""
