@@ -212,16 +212,27 @@ def get_rel_desc(instance, key, action):
 class JSONAPI(object):
     """ JSON API Serializer for SQLAlchemy ORM models. """
 
-    def __init__(self, base, prefix=''):
+    default_options = {
+        'dasherize': True,
+    }
+
+    def __init__(self, base, prefix='', options=None):
         """
         Initialize the serializer.
 
         :param base: Declarative base instance
         :param namespace: The namespace of the API endpoint
+        :param options: an options dict (refer to `JSONAPI.default_options`
+                        for available settings and their defaults)
         """
+
         self.base = base
         self.prefix = prefix
         self.models = {}
+        self.options = dict(**self.default_options)
+        if options:
+            self.options.update(options)
+
         for name, model in base._decl_class_registry.items():
             if name.startswith('_'):
                 continue
@@ -236,8 +247,8 @@ class JSONAPI(object):
             model.__jsonapi_rel_desc__ = {}
             model.__jsonapi_permissions__ = {}
             model.__jsonapi_type__ = api_type
-            model.__jsonapi_map_to_py__ = {dasherize(underscore(x)): x for x in model_keys}
-            model.__jsonapi_map_to_api__ = {x: dasherize(underscore(x)) for x in model_keys}
+            model.__jsonapi_map_to_py__ = {self._dasherize(underscore(x)): x for x in model_keys}
+            model.__jsonapi_map_to_api__ = {x: self._dasherize(underscore(x)) for x in model_keys}
 
             for prop_name, prop_value in iterate_attributes(model):
 
@@ -282,8 +293,13 @@ class JSONAPI(object):
                             perm_idv[check_perm] = prop_value
             self.models[model.__jsonapi_type__] = model
 
+    def _dasherize(self, word):
+        if self.options.get('dasherize', True):
+            return dasherize(word)
+        return word
+
     def _api_type_for_model(self, model):
-        return dasherize(tableize(model.__name__))
+        return self._dasherize(tableize(model.__name__))
 
     def _fetch_model(self, api_type):
         if api_type not in self.models.keys():

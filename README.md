@@ -27,6 +27,9 @@ api = FlaskJSONAPI(app, db)
 # Or, for factory-style applications
 api = FlaskJSONAPI()
 api.init_app(app, db)
+
+# To disable using hyphens as word-separators, disable the dasherize option
+api = FlaskJSONAPI(app, db, options={'dasherize': False})
 ```
 
 ## Quick usage without Flask
