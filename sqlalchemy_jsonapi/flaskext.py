@@ -6,7 +6,7 @@ MIT License
 """
 
 import datetime
-import json
+import simplejson as json
 import uuid
 from functools import wraps
 
@@ -34,6 +34,7 @@ class JSONAPIEncoder(json.JSONEncoder):
         elif callable(value):
             return str(value)
         return json.JSONEncoder.default(self, value)
+
 
 #: The views to generate
 views = [
@@ -241,7 +242,7 @@ class FlaskJSONAPI(object):
                 response = override(exc, results)
             rendered_response = make_response('')
             if response.status_code != 204:
-                data = json.dumps(response.data, cls=self.json_encoder)
+                data = json.dumps(response.data, cls=self.json_encoder, use_decimal=True)
                 rendered_response = make_response(data)
             rendered_response.status_code = response.status_code
             rendered_response.content_type = 'application/vnd.api+json'

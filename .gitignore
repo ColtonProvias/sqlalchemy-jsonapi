@@ -72,3 +72,6 @@ target/
 pyvenv.cfg
 pip-selfcheck.json
 
+# PyCharm
+.idea
+
