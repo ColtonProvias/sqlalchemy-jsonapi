@@ -2,9 +2,10 @@
 
 import unittest
 
-from sqlalchemy_jsonapi.unittests.models import Base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+
+from sqlalchemy_jsonapi.unittests.models import Base
 
 
 class SqlalchemyJsonapiTestCase(unittest.TestCase):
