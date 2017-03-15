@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, validates
 
 from sqlalchemy_jsonapi import (
-    Permissions, permission_test, JSONAPI
+    Permissions, permission_test, INTERACTIVE_PERMISSIONS, JSONAPI
 )
 
 
@@ -44,6 +44,22 @@ class Post(Base):
 
     author = relationship(
         'User', lazy='joined', backref=backref('posts', lazy='dynamic'))
+
+
+class Log(Base):
+    """Log information model."""
+
+    __tablename__ = 'logs'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+
+    user = relationship(
+        'User', lazy='joined', backref=backref('logs', lazy='dynamic'))
+
+    @permission_test(INTERACTIVE_PERMISSIONS)
+    def block_interactive(cls):
+        """Unable to Create, Edit, or Delete a log."""
+        return False
 
 
 serializer = JSONAPI(Base)

@@ -34,12 +34,11 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(user.username, 'SallySmith1')
         self.assertEqual(user.password, 'password')
 
-    def test_resource_creation_response(self):
+    def test_add_resource_response(self):
         """Create resource returns data response and 201.
-        
+
         This test is very fragile.
         """
-
         payload = {
             'data': {
                 'type': 'users',
@@ -69,6 +68,12 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                             'related': '/users/1/posts',
                             'self': '/users/1/relationships/posts'
                         }
+                    },
+                    'logs': {
+                        'links': {
+                            'related': '/users/1/logs',
+                            'self': '/users/1/relationships/logs'
+                        }
                     }
                 },
                 'type': 'users'
@@ -91,7 +96,6 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
 
     def test_add_resource_with_relationship(self):
         """Create resource succesfully with relationship."""
-
         user = models.User(
             first='Sally', last='Smith',
             password='password', username='SallySmith1')
@@ -159,8 +163,8 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
             'data': {
                 'type': 'posts',
                 'attributes': {
-                    'title': 'Some Title',
-                    'content': 'Some Content Inside'
+                    'title': u'Some Title',
+                    'content': u'Some Content Inside'
                 },
                 'id': 1,
                 'relationships': {
@@ -285,6 +289,16 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
 
         self.assertEqual(error.exception.status_code, 409)
 
-# MISSING TEST FOR INVALID VALUE
+    def test_add_resource_access_denied(self):
+        """Add a resource with access denied results in 403."""
+        payload = {
+            'data': {
+                'type': 'logs'
+            }
+        }
 
-# MISSING TEST FOR PERMISSION DENIED
+        with self.assertRaises(errors.PermissionDeniedError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'logs')
+
+        self.assertEqual(error.exception.status_code, 403)
