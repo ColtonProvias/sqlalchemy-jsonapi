@@ -646,6 +646,7 @@ class JSONAPI(object):
 
             attr = getattr(model, attr_name)
             if not hasattr(attr, 'asc'):
+                # pragma: no cover
                 return NotSortableError(model, attr_name)
 
             check_permission(model, attr_name, Permissions.VIEW)
