@@ -6,6 +6,7 @@ from functools import wraps
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+
 from sqlalchemy_jsonapi.unittests.models import Base
 
 
