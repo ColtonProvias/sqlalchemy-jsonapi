@@ -45,7 +45,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                     'first': 'Sally',
                     'last': 'Smith',
                     'username': 'SallySmith1',
-                    'password': 'password',
+                    'password': 'password'
                 }
             }
         }
@@ -58,7 +58,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                 'attributes': {
                     'first': u'Sally',
                     'last': u'Smith',
-                    'username': u'SallySmith1',
+                    'username': u'SallySmith1'
                 },
                 'id': 1,
                 'relationships': {
@@ -72,6 +72,12 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                         'links': {
                             'related': '/users/1/logs',
                             'self': '/users/1/relationships/logs'
+                        }
+                    },
+                    'comments': {
+                        'links': {
+                            'related': '/users/1/comments',
+                            'self': '/users/1/relationships/comments'
                         }
                     }
                 },
@@ -126,6 +132,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(blog_post.author_id, user.id)
         self.assertEqual(blog_post.author, user)
 
+    @testcases.fragile
     def test_add_resource_with_relationship_response(self):
         """Create resource succesfully with relationship returns 201."""
         user = models.User(
@@ -169,6 +176,12 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                             'related': '/posts/1/author',
                             'self': '/posts/1/relationships/author'
                         }
+                    },
+                    'comments': {
+                        'links': {
+                            'related': '/posts/1/comments',
+                            'self': '/posts/1/relationships/comments'
+                        }
                     }
                 }
             },
@@ -180,7 +193,6 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                 'sqlalchemy_jsonapi_version': '4.0.9'
             }
         }
-
         actual = response.data
         self.assertEqual(expected, actual)
         self.assertEqual(response.status_code, 201)
