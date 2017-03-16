@@ -1,7 +1,5 @@
 """Test for serializer's post_collection."""
 
-import nose
-
 from sqlalchemy_jsonapi import errors
 
 from sqlalchemy_jsonapi.unittests.utils import testcases
@@ -34,6 +32,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(user.username, 'SallySmith1')
         self.assertEqual(user.password, 'password')
 
+    @testcases.fragile
     def test_add_resource_response(self):
         """Create resource returns data response and 201.
 
@@ -88,11 +87,8 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         }
 
         actual = response.data
-        try:
-            self.assertEqual(expected, actual)
-            self.assertEqual(201, response.status_code)
-        except AssertionError:
-            raise nose.SkipTest()
+        self.assertEqual(expected, actual)
+        self.assertEqual(201, response.status_code)
 
     def test_add_resource_with_relationship(self):
         """Create resource succesfully with relationship."""
