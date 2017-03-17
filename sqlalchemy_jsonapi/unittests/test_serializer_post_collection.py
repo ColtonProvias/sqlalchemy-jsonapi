@@ -216,8 +216,6 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
             models.serializer.post_collection(
                 self.session, payload, 'users')
 
-        self.assertEqual(
-            error.exception.detail, 'UNIQUE constraint failed: users.username')
         self.assertEqual(error.exception.status_code, 409)
 
     def test_add_resource_mismatched_endpoint(self):
