@@ -5,7 +5,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, validates
 
 from sqlalchemy_jsonapi import (
-    Permissions, permission_test, ALL_PERMISSIONS, JSONAPI
+    Permissions, permission_test, ALL_PERMISSIONS,
+    JSONAPI, AttributeActions, attr_descriptor
 )
 
 
@@ -31,6 +32,18 @@ class User(Base):
     def empty_attributes_not_allowed(self, key, value):
         assert value, 'Empty value not allowed for {0}'.format(key)
         return value
+
+    # For demonstration purposes, we want to store
+    # the first name as SET-ATTR:first in database.
+    @attr_descriptor(AttributeActions.SET, 'first')
+    def set_first_to_start_with_set_attr(self, new_first):
+        self.first = 'SET-ATTR:{0}'.format(new_first)
+
+    # For demonstration purposes, we don't want to show
+    # how we stored first internally in database.
+    @attr_descriptor(AttributeActions.GET, 'first')
+    def get_first_starts_with_get_attr(self):
+        return self.first[9::]
 
 
 class Post(Base):
