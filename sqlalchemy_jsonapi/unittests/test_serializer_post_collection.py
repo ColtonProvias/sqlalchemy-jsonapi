@@ -310,3 +310,155 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
                 self.session, payload, 'logs')
 
         self.assertEqual(error.exception.status_code, 403)
+
+    def test_add_resource_with_given_id(self):
+        """Create resource successfully with specified id."""
+        payload = {
+            'data': {
+                'type': 'users',
+                'id': 3,
+                'attributes': {
+                    'first': 'Sally',
+                    'last': 'Smith',
+                    'username': 'SallySmith1',
+                    'password': 'password',
+                }
+            }
+        }
+
+        response = models.serializer.post_collection(
+            self.session, payload, 'users')
+        user = self.session.query(models.User).get(
+            response.data['data']['id'])
+        self.assertEqual(user.first, 'Sally')
+        self.assertEqual(user.last, 'Smith')
+        self.assertEqual(user.username, 'SallySmith1')
+        self.assertEqual(user.password, 'password')
+
+
+    def test_add_resource_with_invalid_relationships(self):
+        """Create resource with invalid relationship returns 400.
+
+        A BadRequestError is raised.
+        """
+        payload = {
+            'data': {
+                'attributes': {
+                    'first': 'Sally',
+                    'last': 'Smith',
+                    'username': 'SallySmith1',
+                    'password': 'password',
+                },
+                'type': 'users',
+                'relationships': {
+                    'posts': {
+                        'data': {
+                            'type': 'posts',
+                            'id': 1
+                        }
+                    }
+                }
+            }
+        }
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'users')
+
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_no_data_in_relationship(self):
+        """Create resource without data in relationships returns 400.
+
+        A BadRequestError is raised.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        self.session.commit()
+
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'test': {
+                            'type': 'users',
+                            'id': user.id
+                        }
+                    }
+                }
+            }
+        }
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'posts')
+
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_relationship_data_not_dict(self):
+        """Create resource with relationship whose data is not a dict returns 400.
+
+        A BadRequestError is raised.
+        """
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'data': 'Test that not being a dictionary fails'
+                    }
+                }
+            }
+        }
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'posts')
+
+        self.assertEqual(error.exception.detail, 'author must be a hash')
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_relationship_data_invalid(self):
+        """Create resource with relationship whose data contains unknown keys returns 400.
+
+        A BadRequestError is raised.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        self.session.commit()
+
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'data': {
+                            'type': 'users',
+                            'id': 1,
+                            'name': 'Sally'
+                        }
+                    }
+                }
+            }
+        }
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'posts')
+
+        self.assertEqual(error.exception.detail, 'author must have type and id keys')
+        self.assertEqual(error.exception.status_code, 400)
