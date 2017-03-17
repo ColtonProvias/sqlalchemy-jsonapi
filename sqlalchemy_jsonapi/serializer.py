@@ -1038,10 +1038,10 @@ class JSONAPI(object):
                         raise BadRequestError(
                             '{} must be an array'.format(key))
                     for item in data_rel:
-                        # pragma: no cover
                         if not {'type', 'id'} in set(item.keys()):
                             raise BadRequestError(
                                 '{} must have type and id keys'.format(key))
+                        # pragma: no cover
                         to_relate = self._fetch_resource(session, item['type'],
                                                          item['id'],
                                                          Permissions.EDIT)
