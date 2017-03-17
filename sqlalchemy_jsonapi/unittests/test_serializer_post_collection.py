@@ -27,7 +27,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
             self.session, payload, 'users')
         user = self.session.query(models.User).get(
             response.data['data']['id'])
-        self.assertEqual(user.first, 'Sally')
+        self.assertEqual(user.first, 'SET-ATTR:Sally')
         self.assertEqual(user.last, 'Smith')
         self.assertEqual(user.username, 'SallySmith1')
         self.assertEqual(user.password, 'password')
@@ -97,7 +97,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(201, response.status_code)
 
     def test_add_resource_with_relationship(self):
-        """Create resource succesfully with relationship."""
+        """Create resource succesfully with many-to-one relationship."""
         user = models.User(
             first='Sally', last='Smith',
             password='password', username='SallySmith1')
@@ -133,8 +133,8 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(blog_post.author, user)
 
     @testcases.fragile
-    def test_add_resource_with_relationship_response(self):
-        """Create resource succesfully with relationship returns 201."""
+    def test_add_resource_with_many_to_one_relationship_response(self):
+        """Create resource succesfully with many-to-one relationship returns 201."""
         user = models.User(
             first='Sally', last='Smith',
             password='password', username='SallySmith1')
@@ -295,6 +295,7 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
             models.serializer.post_collection(
                 self.session, payload, 'users')
 
+        self.assertEqual(error.exception.detail, 'Incompatible data type')
         self.assertEqual(error.exception.status_code, 409)
 
     def test_add_resource_access_denied(self):
@@ -309,4 +310,196 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
             models.serializer.post_collection(
                 self.session, payload, 'logs')
 
+        self.assertEqual(error.exception.detail, 'CREATE denied on logs.None')
         self.assertEqual(error.exception.status_code, 403)
+
+    def test_add_resource_with_given_id(self):
+        """Create resource successfully with specified id."""
+        payload = {
+            'data': {
+                'type': 'users',
+                'id': 3,
+                'attributes': {
+                    'first': 'Sally',
+                    'last': 'Smith',
+                    'username': 'SallySmith1',
+                    'password': 'password',
+                }
+            }
+        }
+
+        response = models.serializer.post_collection(
+            self.session, payload, 'users')
+        user = self.session.query(models.User).get(
+            response.data['data']['id'])
+        self.assertEqual(user.first, 'SET-ATTR:Sally')
+        self.assertEqual(user.last, 'Smith')
+        self.assertEqual(user.username, 'SallySmith1')
+        self.assertEqual(user.password, 'password')
+
+    def test_add_resource_with_invalid_one_to_many_relationships(self):
+        """Create resource with invalid one-to-many relationship returns 400.
+
+        In a one-to-many relationship, the data in the relationship must be
+        of type array.
+        A BadRequestError is raised.
+        """
+        payload = {
+            'data': {
+                'attributes': {
+                    'first': 'Sally',
+                    'last': 'Smith',
+                    'username': 'SallySmith1',
+                    'password': 'password',
+                },
+                'type': 'users',
+                'relationships': {
+                    'posts': {
+                        'data': {
+                            'type': 'posts',
+                            'id': 1
+                        }
+                    }
+                }
+            }
+        }
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'users')
+
+        self.assertEqual(error.exception.detail, 'posts must be an array')
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_no_data_in_many_to_one_relationship(self):
+        """Create resource without data in many-to-one relationships returns 400.
+
+        A BadRequestError is raised.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        self.session.commit()
+
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'test': {
+                            'type': 'users',
+                            'id': user.id
+                        }
+                    }
+                }
+            }
+        }
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'posts')
+
+        self.assertEqual(
+            error.exception.detail, 'Missing data key in relationship author')
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_when_data_in_many_to_one_relationship_not_dict(self):
+        """Create resource with many-to-one relationship whose data is not a dict returns 400.
+
+        A BadRequestError is raised.
+        """
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'data': 'Test that not being a dictionary fails'
+                    }
+                }
+            }
+        }
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'posts')
+
+        self.assertEqual(error.exception.detail, 'author must be a hash')
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_invalid_many_to_one_relationship_data(self):
+        """Create resource with invalid many-to-one relationship data returns 400.
+
+        A BadRequestError is raised.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        self.session.commit()
+
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'data': {
+                            'type': 'users',
+                            'id': 1,
+                            'name': 'Sally'
+                        }
+                    }
+                }
+            }
+        }
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'posts')
+
+        self.assertEqual(
+            error.exception.detail, 'author must have type and id keys')
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_missing_one_to_many_relationship_type(self):
+        """Create resource with missing one-to-many relationship type returns 400.
+
+        The relationship data must contain 'id' and 'type'.
+        A BadRequestError is raised.
+        """
+        payload = {
+            'data': {
+                'attributes': {
+                    'first': 'Sally',
+                    'last': 'Smith',
+                    'username': 'SallySmith1',
+                    'password': 'password',
+                },
+                'type': 'users',
+                'relationships': {
+                    'posts': {
+                        'data': [{
+                            'type': 'posts',
+                        }]
+                    }
+                }
+            }
+        }
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'users')
+
+        self.assertEqual(
+            error.exception.detail, 'posts must have type and id keys')
+        self.assertEqual(error.exception.status_code, 400)
