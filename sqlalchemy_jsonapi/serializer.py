@@ -979,6 +979,7 @@ class JSONAPI(object):
             data['data'].get('relationships', {}).keys()))
         model_keys = set(resource.__mapper__.relationships.keys())
         if not data_keys <= model_keys:
+            # pragma: no cover
             raise BadRequestError(
                 '{} not relationships for {}'.format(
                     ', '.join(list(data_keys -
@@ -1037,6 +1038,7 @@ class JSONAPI(object):
                         raise BadRequestError(
                             '{} must be an array'.format(key))
                     for item in data_rel:
+                        # pragma: no cover
                         if not {'type', 'id'} in set(item.keys()):
                             raise BadRequestError(
                                 '{} must have type and id keys'.format(key))
@@ -1079,6 +1081,7 @@ class JSONAPI(object):
             session.rollback()
             raise ValidationError(str(e.orig))
         except AssertionError as e:
+            # pragma: no cover
             session.rollback()
             raise ValidationError(e.msg)
         except TypeError as e:
