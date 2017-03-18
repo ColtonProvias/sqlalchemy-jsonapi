@@ -31,3 +31,14 @@ class DeleteResource(testcases.SqlalchemyJsonapiTestCase):
         actual = response.data
         self.assertEqual(expected, actual)
         self.assertEqual(204, response.status_code)
+
+    def test_delete_nonexistant_resource(self):
+        """Delete notexistant resource returns 404.
+
+        A ResourceTypeNotFoundError is raised.
+        """
+        with self.assertRaises(errors.ResourceTypeNotFoundError) as error:
+            models.serializer.delete_resource(
+                self.session, {}, 'non-existant', 1)
+
+        self.assertEqual(error.exception.status_code, 404)
