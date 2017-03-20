@@ -590,6 +590,7 @@ class JSONAPI(object):
         get = get_rel_desc(resource, relationship.key, RelationshipActions.GET)
 
         for item in get(resource):
+            # pragma: no cover
             response.data['data'].append(self._render_short_instance(item))
 
         return response

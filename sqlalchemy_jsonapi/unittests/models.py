@@ -53,10 +53,13 @@ class Post(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(100), nullable=False)
     content = Column(Text, nullable=False)
-    author_id = Column(Integer, ForeignKey('users.id'))
+    author_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
 
-    author = relationship(
-        'User', lazy='joined', backref=backref('posts', lazy='dynamic'))
+    author = relationship('User',
+                          lazy='joined',
+                          backref=backref('posts',
+                                          lazy='dynamic',
+                                          cascade='all,delete'))
 
 
 class Comment(Base):
@@ -64,14 +67,14 @@ class Comment(Base):
 
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True)
-    post_id = Column(Integer, ForeignKey('posts.id'))
+    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'))
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     content = Column(Text, nullable=False)
 
     post = relationship('Post',
                         lazy='joined',
                         backref=backref('comments',
-                                        lazy='dynamic'))
+                                        lazy='dynamic', cascade='all,delete'))
     author = relationship('User',
                           lazy='joined',
                           backref=backref('comments',
