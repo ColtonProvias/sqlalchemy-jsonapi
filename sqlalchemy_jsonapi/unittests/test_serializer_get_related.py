@@ -150,7 +150,7 @@ class GetRelated(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(200, response.status_code)
 
     def test_get_related_with_unknown_relationship(self):
-        """get related resource with unknown relationship returns 404.
+        """Get related resource with unknown relationship returns 404.
 
         A RelationshipNotFoundError is raised.
         """
