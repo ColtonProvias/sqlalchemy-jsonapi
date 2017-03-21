@@ -43,7 +43,9 @@ class User(Base):
     # how we stored first internally in database.
     @attr_descriptor(AttributeActions.GET, 'first')
     def get_first_starts_with_get_attr(self):
-        return self.first[9::]
+        if 'SET-ATTR:' in self.first:
+            return self.first[9::]
+        return self.first
 
 
 class Post(Base):
