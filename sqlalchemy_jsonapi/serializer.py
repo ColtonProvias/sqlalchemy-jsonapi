@@ -459,7 +459,6 @@ class JSONAPI(object):
             check_permission(instance, rel_key, Permissions.EDIT)
 
             if rel.cascade.delete:
-
                 if rel.direction == MANYTOONE:
                     related = getattr(instance, rel_key)
                     self._check_instance_relationships_for_delete(related)
