@@ -132,7 +132,7 @@ class PostRelationship(testcases.SqlalchemyJsonapiTestCase):
     def test_post_relationship_with_incompatible_data_model(self):
         """Post relationship with incompatible data model returns 409.
 
-        The model tyles in the payload must match the relationship type.
+        The model type in the payload must match the relationship type.
         A ValidationError is raised.
         """
         user = models.User(
