@@ -939,6 +939,7 @@ class JSONAPI(object):
             session.rollback()
             raise ValidationError(str(e.orig))
         except AssertionError as e:
+            # pragma: no cover
             session.rollback()
             raise ValidationError(e.msg)
         except TypeError as e:
