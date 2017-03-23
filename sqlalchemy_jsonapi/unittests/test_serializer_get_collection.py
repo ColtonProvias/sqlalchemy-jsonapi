@@ -106,7 +106,7 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                     }
                 },
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': u'This is a comment'
                 }
             }],
             'included': [{
@@ -115,8 +115,8 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
                 'relationships': {
                     'posts': {
                         'links': {
-                            'self': '/users/1/relationships/post',
-                            'related': '/users/1/post'
+                            'self': '/users/1/relationships/posts',
+                            'related': '/users/1/posts'
                         }
                     },
                     'comments': {
