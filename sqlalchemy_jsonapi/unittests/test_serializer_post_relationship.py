@@ -8,6 +8,7 @@ from sqlalchemy_jsonapi.unittests import models
 
 class PostRelationship(testcases.SqlalchemyJsonapiTestCase):
     """Tests for serializer.post_relationship."""
+
     def test_post_relationship_on_to_many_success(self):
         """Post relationship creates a relationship on many resources."""
         user = models.User(
