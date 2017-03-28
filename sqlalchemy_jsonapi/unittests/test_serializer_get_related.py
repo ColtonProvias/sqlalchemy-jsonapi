@@ -174,3 +174,30 @@ class GetRelated(testcases.SqlalchemyJsonapiTestCase):
                 blog_post.id, 'invalid-relationship')
 
         self.assertEqual(error.exception.status_code, 404)
+
+    def test_get_related_when_related_object_is_null(self):
+        """Get a related object that is null returns 200."""
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content')
+        self.session.add(blog_post)
+        self.session.commit()
+
+        response = models.serializer.get_related(
+            self.session, {}, 'posts', blog_post.id, 'author')
+
+        expected = {
+            'data': None,
+            'jsonapi': {
+                'version': '1.0'
+            },
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            }
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)
