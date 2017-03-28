@@ -143,7 +143,7 @@ class ResourceTypeNotFoundError(BaseError):
 def user_error(status_code, title, detail, pointer):
     """Create and return a general user error response that is jsonapi compliant.
 
-    Args:
+    Required args:
         status_code: The HTTP status code associated with the problem.
         title: A short summary of the problem.
         detail: An explanation specific to the occurence of the problem.
