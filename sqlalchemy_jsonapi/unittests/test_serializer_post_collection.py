@@ -503,3 +503,18 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(
             error.exception.detail, 'posts must have type and id keys')
         self.assertEqual(error.exception.status_code, 400)
+
+    def test_add_resource_with_invalid_json_payload(self):
+        """Create resource with invalid json payload returns 400.
+
+        A BadRequestError is raised.
+        """
+        payload = {'foo'}
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.post_collection(
+                self.session, payload, 'users')
+
+        self.assertEqual(
+            error.exception.detail, 'Request body should be a JSON hash')
+        self.assertEqual(error.exception.status_code, 400)
