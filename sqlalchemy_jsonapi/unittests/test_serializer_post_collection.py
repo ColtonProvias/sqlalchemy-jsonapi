@@ -503,3 +503,59 @@ class PostCollection(testcases.SqlalchemyJsonapiTestCase):
         self.assertEqual(
             error.exception.detail, 'posts must have type and id keys')
         self.assertEqual(error.exception.status_code, 400)
+
+    @testcases.fragile
+    def test_add_resource_with_a_null_relationship(self):
+        """Create resource with a null relationship returns 201."""
+        payload = {
+            'data': {
+                'type': 'posts',
+                'attributes': {
+                    'title': 'Some Title',
+                    'content': 'Some Content Inside'
+                },
+                'relationships': {
+                    'author': {
+                        'data': None
+                    }
+                }
+            }
+        }
+
+        response = models.serializer.post_collection(
+            self.session, payload, 'posts')
+
+        expected = {
+            'data': {
+                'type': 'posts',
+                'relationships': {
+                    'author': {
+                        'links': {
+                            'self': '/posts/1/relationships/author',
+                            'related': '/posts/1/author'
+                        }
+                    },
+                    'comments': {
+                        'links': {
+                            'self': '/posts/1/relationships/comments',
+                            'related': '/posts/1/comments'
+                        }
+                    }
+                },
+                'id': 1,
+                'attributes': {
+                    'title': u'Some Title',
+                    'content': u'Some Content Inside'
+                }
+            },
+            'jsonapi': {
+                'version': '1.0'
+            },
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            },
+            'included': []
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(201, response.status_code)
