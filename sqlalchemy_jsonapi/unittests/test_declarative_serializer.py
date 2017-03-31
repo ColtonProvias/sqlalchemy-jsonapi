@@ -149,7 +149,7 @@ class TestDeclarativeSerializer(testcases.SqlalchemyJsonapiTestCase):
                 'version': '1.0'
             }
         }
-        self.assertEqual(expected['data'], sorted(actual['data']))
+        self.assertEqual(expected['data'], actual['data'])
         self.assertEqual(expected['meta'], actual['meta'])
         self.assertEqual(expected['jsonapi'], actual['jsonapi'])
         self.assertEqual(expected['included'], actual['included'])
