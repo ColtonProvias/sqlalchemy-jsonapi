@@ -25,7 +25,7 @@ class TestDeclarativeSerializer(testcases.SqlalchemyJsonapiTestCase):
         self.session.commit()
         user = self.session.query(models.User).get(user.id)
 
-        user_serializer = models.UserSerializer()
+        user_serializer = UserSerializer()
         serialized_data = user_serializer.serialize(user)
 
         expected = {
@@ -80,7 +80,7 @@ class TestDeclarativeSerializer(testcases.SqlalchemyJsonapiTestCase):
         self.session.commit()
         collection = self.session.query(models.User)
 
-        user_serializer = models.UserSerializer()
+        user_serializer = UserSerializer()
         actual = user_serializer.serialize(collection)
 
         expected = {
@@ -209,6 +209,6 @@ class TestDeclarativeSerializer(testcases.SqlalchemyJsonapiTestCase):
         self.session.commit()
         post = self.session.query(models.Post).get(blog_post.id)
 
-        user_serializer = models.UserSerializer()
+        user_serializer = UserSerializer()
         with self.assertRaises(TypeError):
             user_serializer.serialize(post)
