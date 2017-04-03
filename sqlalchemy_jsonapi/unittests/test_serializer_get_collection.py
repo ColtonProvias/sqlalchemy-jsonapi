@@ -1,5 +1,7 @@
 """Test for serializer's get_collection."""
 
+from sqlalchemy_jsonapi import errors
+
 from sqlalchemy_jsonapi.unittests.utils import testcases
 from sqlalchemy_jsonapi.unittests import models
 
@@ -442,3 +444,481 @@ class GetCollection(testcases.SqlalchemyJsonapiTestCase):
         actual = response.data
         self.assertEquals(expected, actual)
         self.assertEquals(200, response.status_code)
+
+    def test_get_collection_with_single_field(self):
+        """Get collection with specific field returns 200.
+
+        The response will only contain attributes specific in field dictionary.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        log = models.Log(user_id=user.id, user=user)
+        self.session.add(log)
+        self.session.commit()
+
+        response = models.serializer.get_collection(
+            self.session, {'fields[users]': 'first'}, 'users')
+
+        expected = {
+            'data': [{
+                'relationships': {},
+                'id': 1,
+                'type': 'users',
+                'attributes': {
+                    'first': u'Sally'
+                }
+            }],
+            'included': [],
+            'jsonapi': {
+                'version': '1.0'
+            },
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            }
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)
+
+    @testcases.fragile
+    def test_get_collection_when_including_model_and_its_attribute(self):
+        """Get collection when including the model and its attribute returns 200."""
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content',
+            author_id=user.id, author=user)
+        self.session.add(blog_post)
+        comment = models.Comment(
+            content='This is comment 1', author_id=user.id,
+            post_id=blog_post.id, author=user, post=blog_post)
+        self.session.add(comment)
+        self.session.commit()
+
+        response = models.serializer.get_collection(
+            self.session, {'include': 'post.author'}, 'comments')
+
+        expected = {
+            'included': [{
+                'id': 1,
+                'type': 'users',
+                'relationships': {
+                    'posts': {
+                        'links': {
+                            'self': '/users/1/relationships/posts',
+                            'related': '/users/1/posts'
+                        }
+                    },
+                    'comments': {
+                        'links': {
+                            'self': '/users/1/relationships/comments',
+                            'related': '/users/1/comments'
+                        }
+                    },
+                    'logs': {
+                        'links': {
+                            'self': '/users/1/relationships/logs',
+                            'related': '/users/1/logs'
+                        }
+                    }
+                },
+                'attributes': {
+                    'username': u'SallySmith1',
+                    'first': u'Sally',
+                    'last': u'Smith'
+                }
+            }, {
+                'id': 1,
+                'type': 'posts',
+                'relationships': {
+                    'author': {
+                        'data': {
+                            'id': 1,
+                            'type': 'users'
+                        },
+                        'links': {
+                            'self': '/posts/1/relationships/author',
+                            'related': '/posts/1/author'
+                        }
+                    },
+                    'comments': {
+                        'links': {
+                            'self': '/posts/1/relationships/comments',
+                            'related': '/posts/1/comments'
+                        }
+                    }
+                },
+                'attributes': {
+                    'content': u'This is the content',
+                    'title': u'This Is A Title'
+                }
+            }],
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            },
+            'data': [{
+                'id': 1,
+                'type': 'comments',
+                'relationships': {
+                    'post': {
+                        'data': {
+                            'id': 1,
+                            'type': 'posts'
+                        },
+                        'links': {
+                            'self': '/comments/1/relationships/post',
+                            'related': '/comments/1/post'
+                        }
+                    },
+                    'author': {
+                        'links': {
+                            'self': '/comments/1/relationships/author',
+                            'related': '/comments/1/author'
+                        }
+                    }
+                },
+                'attributes': {
+                    'content': u'This is comment 1'
+                }
+            }],
+            'jsonapi': {
+                'version': '1.0'
+            }
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)
+
+    @testcases.fragile
+    def test_get_collection_given_an_included_model_that_is_null(self):
+        """Get collection when given a included model that is null returns 200."""
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content')
+        self.session.add(blog_post)
+        self.session.commit()
+
+        response = models.serializer.get_collection(
+            self.session, {'include': 'author'}, 'posts')
+
+        expected = {
+            'jsonapi': {
+                'version': '1.0'
+            },
+            'data': [{
+                'id': 1,
+                'type': 'posts',
+                'attributes': {
+                    'title': u'This Is A Title',
+                    'content': u'This is the content'
+                },
+                'relationships': {
+                    'author': {
+                        'links': {
+                            'related': '/posts/1/author',
+                            'self': '/posts/1/relationships/author'
+                        },
+                        'data': None
+                    },
+                    'comments': {
+                        'links': {
+                            'related': '/posts/1/comments',
+                            'self': '/posts/1/relationships/comments'
+                        }
+                    }
+                }
+            }],
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            },
+            'included': []
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)
+
+    @testcases.fragile
+    def test_get_collection_with_multiple_included_models(self):
+        """Get collection with multiple included models returns 200."""
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content',
+            author_id=user.id, author=user)
+        self.session.add(blog_post)
+        comment = models.Comment(
+            content='This is comment 1', author_id=user.id,
+            post_id=blog_post.id, author=user, post=blog_post)
+        self.session.add(comment)
+        self.session.commit()
+
+        response = models.serializer.get_collection(
+            self.session, {'include': 'comments,author'}, 'posts')
+
+        expected = {
+            'data': [{
+                'type': 'posts',
+                'id': 1,
+                'relationships': {
+                    'comments': {
+                        'data': [{
+                            'type': 'comments',
+                            'id': 1
+                        }],
+                        'links': {
+                            'related': '/posts/1/comments',
+                            'self': '/posts/1/relationships/comments'
+                        }
+                    },
+                    'author': {
+                        'data': {
+                            'type': 'users',
+                            'id': 1
+                        },
+                        'links': {
+                            'related': '/posts/1/author',
+                            'self': '/posts/1/relationships/author'
+                        }
+                    }
+                },
+                'attributes': {
+                    'title': u'This Is A Title',
+                    'content': u'This is the content'
+                }
+            }],
+            'jsonapi': {
+                'version': '1.0'
+            },
+            'included': [{
+                'type': 'users',
+                'id': 1,
+                'relationships': {
+                    'comments': {
+                        'links': {
+                            'related': '/users/1/comments',
+                            'self': '/users/1/relationships/comments'
+                        }
+                    },
+                    'logs': {
+                        'links': {
+                            'related': '/users/1/logs',
+                            'self': '/users/1/relationships/logs'
+                        }
+                    },
+                    'posts': {
+                        'links': {
+                            'related': '/users/1/posts',
+                            'self': '/users/1/relationships/posts'
+                        }
+                    }
+                },
+                'attributes': {
+                    'last': u'Smith',
+                    'first': u'Sally',
+                    'username': u'SallySmith1'
+                }
+            }, {
+                'type': 'comments',
+                'id': 1,
+                'relationships': {
+                    'author': {
+                        'links': {
+                            'related': '/comments/1/author',
+                            'self': '/comments/1/relationships/author'
+                        }
+                    },
+                    'post': {
+                        'links': {
+                            'related': '/comments/1/post',
+                            'self': '/comments/1/relationships/post'
+                        }
+                    }
+                },
+                'attributes': {
+                    'content': u'This is comment 1'
+                }
+            }],
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            }
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)
+
+    def test_get_collection_given_pagination_with_offset(self):
+        """Get collection given pagination with offset 200."""
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content',
+            author_id=user.id, author=user)
+        self.session.add(blog_post)
+        for x in range(10):
+            comment = models.Comment(
+                content='This is comment {0}'.format(x+1), author_id=user.id,
+                post_id=blog_post.id, author=user, post=blog_post)
+            self.session.add(comment)
+        self.session.commit()
+
+        response = models.serializer.get_collection(
+            self.session,
+            {'page[offset]': u'5', 'page[limit]': u'2'}, 'comments')
+
+        expected = {
+            'jsonapi': {
+                'version': '1.0'
+            },
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            },
+            'included': [],
+            'data': [{
+                'relationships': {
+                    'author': {
+                        'links': {
+                            'related': '/comments/6/author',
+                            'self': '/comments/6/relationships/author'
+                        }
+                    },
+                    'post': {
+                        'links': {
+                            'related': '/comments/6/post',
+                            'self': '/comments/6/relationships/post'
+                        }
+                    }
+                },
+                'attributes': {
+                    'content': u'This is comment 6'
+                },
+                'id': 6,
+                'type': 'comments'
+            }, {
+                'relationships': {
+                    'author': {
+                        'links': {
+                            'related': '/comments/7/author',
+                            'self': '/comments/7/relationships/author'
+                        }
+                    },
+                    'post': {
+                        'links': {
+                            'related': '/comments/7/post',
+                            'self': '/comments/7/relationships/post'
+                        }
+                    }
+                },
+                'attributes': {
+                    'content': u'This is comment 7'
+                },
+                'id': 7,
+                'type': 'comments'
+            }]
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)
+
+    def test_get_collection_given_invalid_size_for_pagination(self):
+        """Get collection given invalid size for pagination returns 400.
+
+        A BadRequestError is raised.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content',
+            author_id=user.id, author=user)
+        self.session.add(blog_post)
+        for x in range(10):
+            comment = models.Comment(
+                content='This is comment {0}'.format(x+1), author_id=user.id,
+                post_id=blog_post.id, author=user, post=blog_post)
+            self.session.add(comment)
+        self.session.commit()
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.get_collection(
+                self.session,
+                {'page[number]': u'foo', 'page[size]': u'2'}, 'comments')
+
+        expected_detail = 'Page query parameters must be integers'
+        self.assertEqual(error.exception.detail, expected_detail)
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_get_collection_given_invalid_limit_for_pagination(self):
+        """Get collection given invalid limit for pagination returns 400.
+
+        A BadRequestError is raised.
+        """
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content',
+            author_id=user.id, author=user)
+        self.session.add(blog_post)
+        for x in range(10):
+            comment = models.Comment(
+                content='This is comment {0}'.format(x+1), author_id=user.id,
+                post_id=blog_post.id, author=user, post=blog_post)
+            self.session.add(comment)
+        self.session.commit()
+
+        with self.assertRaises(errors.BadRequestError) as error:
+            models.serializer.get_collection(
+                self.session,
+                {'page[offset]': u'5', 'page[limit]': u'foo'}, 'comments')
+
+        expected_detail = 'Page query parameters must be integers'
+        self.assertEqual(error.exception.detail, expected_detail)
+        self.assertEqual(error.exception.status_code, 400)
+
+    def test_get_collection_when_pagnation_is_out_of_range(self):
+        """Get collection when pagination is out of range returns 200."""
+        user = models.User(
+            first='Sally', last='Smith',
+            password='password', username='SallySmith1')
+        self.session.add(user)
+        blog_post = models.Post(
+            title='This Is A Title', content='This is the content',
+            author_id=user.id, author=user)
+        self.session.add(blog_post)
+        for x in range(10):
+            comment = models.Comment(
+                content='This is comment {0}'.format(x+1), author_id=user.id,
+                post_id=blog_post.id, author=user, post=blog_post)
+            self.session.add(comment)
+        self.session.commit()
+
+        response = models.serializer.get_collection(
+            self.session,
+            {'page[offset]': u'999999', 'page[limit]': u'2'}, 'comments')
+
+        expected = {
+            'data': [],
+            'included': [],
+            'meta': {
+                'sqlalchemy_jsonapi_version': '4.0.9'
+            },
+            'jsonapi': {
+                'version': '1.0'
+            }
+        }
+        actual = response.data
+        self.assertEqual(expected, actual)
+        self.assertEqual(200, response.status_code)

@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 
 
@@ -137,3 +138,29 @@ class ResourceTypeNotFoundError(BaseError):
         tmpl = 'This backend has not been configured to handle resources of '\
             'type {}.'
         self.detail = tmpl.format(api_type)
+
+
+def user_error(status_code, title, detail, pointer):
+    """Create and return a general user error response that is jsonapi compliant.
+
+    Required args:
+        status_code: The HTTP status code associated with the problem.
+        title: A short summary of the problem.
+        detail: An explanation specific to the occurence of the problem.
+        pointer: The request path associated with the source of the problem.
+    """
+    response = {
+        'errors': [{
+            'status': status_code,
+            'source': {'pointer': '{0}'.format(pointer)},
+            'title': title,
+            'detail': detail,
+        }],
+        'jsonapi': {
+            'version': '1.0'
+        },
+        'meta': {
+            'sqlalchemy_jsonapi_version': '4.0.9'
+        }
+    }
+    return json.dumps(response), status_code
