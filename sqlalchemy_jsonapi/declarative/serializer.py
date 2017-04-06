@@ -48,7 +48,6 @@ class JSONAPISerializer(object):
             return None
         # Must not render a resource that has same named
         # attributes as different model.
-        import pdb; pdb.set_trace()
         if not isinstance(resource, self.model):
             raise TypeError(
                 'Resource(s) type must be the same as the serializer model type.')
