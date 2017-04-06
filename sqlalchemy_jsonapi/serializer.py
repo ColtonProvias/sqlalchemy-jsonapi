@@ -4,7 +4,11 @@ Serializer
 Colton J. Provias
 MIT License
 """
-from enum import Enum
+
+try:
+    from enum import Enum
+except ImportError:
+    from enum34 import Enum
 
 from inflection import dasherize, tableize, underscore
 from sqlalchemy.exc import IntegrityError
