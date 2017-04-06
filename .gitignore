@@ -72,3 +72,5 @@ target/
 pyvenv.cfg
 pip-selfcheck.json
 
+# Editors
+*.swp
