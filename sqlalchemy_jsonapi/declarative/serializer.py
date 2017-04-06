@@ -18,7 +18,7 @@ class JSONAPISerializer(object):
             raise
 
         if 'id' not in self.fields:
-            raise ValueError
+            raise ValueError("Serializer fields must contain 'id'")
         serialized = {
             'meta': {
                 'sqlalchemy_jsonapi_version': '4.0.9'
@@ -49,7 +49,8 @@ class JSONAPISerializer(object):
         # Must not render a resource that has same named
         # attributes as different model.
         if not isinstance(resource, self.model):
-            raise TypeError
+            raise TypeError(
+                'Resource(s) must have be of same type as serializer model.')
 
         top_level_members = {}
         top_level_members['id'] = str(resource.id)
