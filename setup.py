@@ -18,10 +18,18 @@ import sys
 requirements = ['SQLAlchemy', 'inflection']
 
 if sys.version_info[0] != 3 or sys.version_info[1] < 4:
-      requirements.append('enum34')
+    requirements.append('enum34')
+
+# XXX: deryck (2016 April 6) __version__ is defined twice.
+# __version__ is defined here and in sqlalchemy_jsonapi.__version__
+# but we can't import it since __init__ imports literally everything.
+# The constants and serializer files depend on enum34 which has to be
+# conditionally installed. Once we stop supporting Python 2.7,
+# this version string can also be imported as sqlalchemy_jsonapi.__version__.
+__version__ = '4.0.9'
 
 setup(name='SQLAlchemy-JSONAPI',
-      version='4.0.9',
+      version=__version__,
       url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
       license='MIT',
       author='Colton J. Provias',

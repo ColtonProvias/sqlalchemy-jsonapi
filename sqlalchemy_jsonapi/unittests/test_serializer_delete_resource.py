@@ -4,6 +4,7 @@ from sqlalchemy_jsonapi import errors
 
 from sqlalchemy_jsonapi.unittests.utils import testcases
 from sqlalchemy_jsonapi.unittests import models
+from sqlalchemy_jsonapi import __version__
 
 
 class DeleteResource(testcases.SqlalchemyJsonapiTestCase):
@@ -22,7 +23,7 @@ class DeleteResource(testcases.SqlalchemyJsonapiTestCase):
 
         expected = {
             'meta': {
-                'sqlalchemy_jsonapi_version': '4.0.9'
+                'sqlalchemy_jsonapi_version': __version__
             },
             'jsonapi': {
                 'version': '1.0'
