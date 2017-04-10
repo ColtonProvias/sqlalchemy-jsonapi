@@ -298,7 +298,6 @@ class SerializeResourceWithRelatedModels(unittest.TestCase):
             """Declarative serializer for User."""
             fields = ['id', 'first_name']
             model = self.User
-            dasherize = True
 
         user = self.User(first_name='Sally')
         self.session.add(user)
@@ -340,7 +339,6 @@ class SerializeResourceWithRelatedModels(unittest.TestCase):
             """Declarative serializer for Post."""
             fields = ['id', 'title']
             model = self.Post
-            dasherize = True
 
         blog_post = self.Post(title='Foo')
         self.session.add(blog_post)
@@ -464,7 +462,6 @@ class TestSerializeErrors(unittest.TestCase):
             """Declarative serializer for User."""
             fields = ['id']
             model = self.Post
-            dasherize = True
 
         user = self.User(first_name='Sally')
         self.session.add(user)
@@ -475,24 +472,6 @@ class TestSerializeErrors(unittest.TestCase):
         with self.assertRaises(TypeError):
             user_serializer.serialize(user)
 
-    def test_serialize_resource_with_missing_id_field(self):
-        """An 'id' is required in serializer fields."""
-
-        class UserSerializer(serializer.JSONAPISerializer):
-            """Declarative serializer for User."""
-            fields = ['first_name']
-            model = self.User
-            dasherize = True
-
-        user = self.User(first_name='Sally')
-        self.session.add(user)
-        self.session.commit()
-        user = self.session.query(self.User).get(user.id)
-
-        user_serializer = UserSerializer()
-        with self.assertRaises(ValueError):
-            user_serializer.serialize(user)
-
     def test_serialize_resource_with_unknown_attribute_in_fields(self):
         """Cannot serialize attributes that are unknown to resource."""
 
@@ -500,7 +479,6 @@ class TestSerializeErrors(unittest.TestCase):
             """Declarative serializer for User."""
             fields = ['id', 'firsts_names_unknown']
             model = self.User
-            dasherize = True
 
         user = self.User(first_name='Sally')
         self.session.add(user)
@@ -521,7 +499,6 @@ class TestSerializeErrors(unittest.TestCase):
             """Declarative serializer for User."""
             fields = ['id', 'posts']
             model = self.User
-            dasherize = True
 
         user = self.User(first_name='Sally')
         self.session.add(user)
@@ -542,7 +519,6 @@ class TestSerializeErrors(unittest.TestCase):
             """Declarative serializer for Post."""
             fields = ['id', 'author_id']
             model = self.Post
-            dasherize = False
 
         blog_post = self.Post(title='Foo')
         self.session.add(blog_post)
@@ -553,12 +529,16 @@ class TestSerializeErrors(unittest.TestCase):
         with self.assertRaises(AttributeError):
             blog_post_serializer.serialize(post)
 
-    def test_serialize_resource_with_no_defined_dasherize(self):
-        """Serializer requires dasherize member."""
+    def test_serialize_resource_with_invalid_primary_key(self):
+        """Resource cannot have unknown primary key.
+
+        The primary key must be an attribute on the resource.
+        """
 
         class UserSerializer(serializer.JSONAPISerializer):
-            """Declarative serializer for User."""
-            fields = ['id', 'firsts_names_unknown']
+            """Declarative serializer for Post."""
+            fields = ['unknown_primary_key', 'first_name']
+            primary_key = 'unknown_primary_key'
             model = self.User
 
         user = self.User(first_name='Sally')
@@ -570,36 +550,55 @@ class TestSerializeErrors(unittest.TestCase):
         with self.assertRaises(AttributeError):
             user_serializer.serialize(user)
 
-    def test_serialize_resource_with_no_defined_model(self):
+
+class TestSerializerInstantiationErrors(unittest.TestCase):
+    """Test exceptions raised in instantiation of serializer."""
+
+    def setUp(self):
+        """Configure sqlalchemy and session."""
+        self.engine = create_engine('sqlite://')
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+        self.Base = declarative_base()
+
+        class User(self.Base):
+            __tablename__ = 'users'
+            id = Column(Integer, primary_key=True)
+            first_name = Column(String(50), nullable=False)
+
+        self.User = User
+        self.Base.metadata.create_all(self.engine)
+
+    def tearDown(self):
+        """Reset the sqlalchemy engine."""
+        self.Base.metadata.drop_all(self.engine)
+
+    def test_serializer_with_no_defined_model(self):
         """Serializer requires model member."""
 
         class UserSerializer(serializer.JSONAPISerializer):
             """Declarative serializer for User."""
-            fields = ['id', 'firsts_names_unknown']
-            dasherize = True
+            fields = ['id']
 
-        user = self.User(first_name='Sally')
-        self.session.add(user)
-        self.session.commit()
-        user = self.session.query(self.User).get(user.id)
+        with self.assertRaises(TypeError):
+            UserSerializer()
 
-        user_serializer = UserSerializer()
-        with self.assertRaises(AttributeError):
-            user_serializer.serialize(user)
+    def test_serializer_with_no_defined_fields(self):
+        """At minimum fields must exist."""
+        class UserSerializer(serializer.JSONAPISerializer):
+            """Declarative serializer for User."""
+            model = self.User
 
-    def test_serialize_resource_with_no_defined_fields(self):
-        """Serializer requires field member."""
+        with self.assertRaises(ValueError):
+            UserSerializer()
+
+    def test_serializer_with_missing_id_field(self):
+        """An 'id' is required in serializer fields."""
 
         class UserSerializer(serializer.JSONAPISerializer):
             """Declarative serializer for User."""
-            dasherize = True
+            fields = ['first_name']
             model = self.User
 
-        user = self.User(first_name='Sally')
-        self.session.add(user)
-        self.session.commit()
-        user = self.session.query(self.User).get(user.id)
-
-        user_serializer = UserSerializer()
-        with self.assertRaises(AttributeError):
-            user_serializer.serialize(user)
+        with self.assertRaises(ValueError):
+            UserSerializer()

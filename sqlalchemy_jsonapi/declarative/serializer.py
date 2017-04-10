@@ -7,18 +7,22 @@ from inflection import dasherize, underscore
 
 class JSONAPISerializer(object):
     """A JSON API serializer that serializes SQLAlchemy models."""
+    model = None
+    primary_key = 'id'
+    fields = []
+    dasherize = True
+
+    def __init__(self):
+        """Ensure required members are not defaults."""
+        if self.model is None:
+            raise TypeError("Model cannot be of type 'None'.")
+        if self.primary_key not in self.fields:
+            raise ValueError(
+                "Serializer fields must contain primary key '{}'".format(
+                    self.primary_key))
 
     def serialize(self, resources):
         """Serialize resource(s) according to json-api spec."""
-        try:
-            self.fields
-            self.model
-            self.dasherize
-        except AttributeError:
-            raise
-
-        if 'id' not in self.fields:
-            raise ValueError("Serializer fields must contain an 'id'")
         serialized = {
             'meta': {
                 'sqlalchemy_jsonapi_version': '4.0.9'
@@ -53,12 +57,14 @@ class JSONAPISerializer(object):
                 'Resource(s) type must be the same as the serializer model type.')
 
         top_level_members = {}
-        top_level_members['id'] = str(resource.id)
+        try:
+            top_level_members['id'] = str(getattr(resource, self.primary_key))
+        except AttributeError:
+            raise
         top_level_members['type'] = resource.__tablename__
         top_level_members['attributes'] = self._render_attributes(resource)
         top_level_members['relationships'] = self._render_relationships(
                                                 resource)
-
         return top_level_members
 
     def _render_attributes(self, resource):
@@ -77,7 +83,7 @@ class JSONAPISerializer(object):
             mapped_fields = {x: x for x in self.fields}
 
         for attribute in self.fields:
-            if attribute == 'id':
+            if attribute == self.primary_key:
                 continue
             # Per json-api spec, we cannot render foreign keys
             # or relationsips in attributes.
@@ -98,6 +104,7 @@ class JSONAPISerializer(object):
         """Render the resource's relationships."""
         relationships = {}
         related_models = resource.__mapper__.relationships.keys()
+        primary_key_val = getattr(resource, self.primary_key)
         if self.dasherize:
             mapped_relationships = {
                 x: dasherize(underscore(x)) for x in related_models}
@@ -108,10 +115,12 @@ class JSONAPISerializer(object):
             relationships[mapped_relationships[model]] = {
                 'links': {
                     'self': '/{}/{}/relationships/{}'.format(
-                        resource.__tablename__, resource.id,
+                        resource.__tablename__,
+                        primary_key_val,
                         mapped_relationships[model]),
                     'related': '/{}/{}/{}'.format(
-                        resource.__tablename__, resource.id,
+                        resource.__tablename__,
+                        primary_key_val,
                         mapped_relationships[model])
                 }
             }
