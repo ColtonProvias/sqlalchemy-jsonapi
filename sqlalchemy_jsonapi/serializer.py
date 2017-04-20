@@ -946,7 +946,7 @@ class JSONAPI(object):
         except AssertionError as e:
             # pragma: no cover
             session.rollback()
-            raise ValidationError(e.msg)
+            raise ValidationError(getattr(e, 'msg', str(e))
         except TypeError as e:
             session.rollback()
             raise ValidationError('Incompatible data type')
@@ -1088,7 +1088,7 @@ class JSONAPI(object):
         except AssertionError as e:
             # pragma: no cover
             session.rollback()
-            raise ValidationError(e.msg)
+            raise ValidationError(getattr(e, 'msg', str(e)))
         except TypeError as e:
             session.rollback()
             raise ValidationError('Incompatible data type')
