@@ -28,6 +28,8 @@ if sys.version_info[0] != 3 or sys.version_info[1] < 4:
 # this version string can also be imported as sqlalchemy_jsonapi.__version__.
 __version__ = '4.0.9'
 
+from sqlalchemy_jsonapi import __version__
+
 setup(name='SQLAlchemy-JSONAPI',
       version=__version__,
       url='http://github.com/coltonprovias/sqlalchemy-jsonapi',
