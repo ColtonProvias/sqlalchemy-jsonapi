@@ -266,7 +266,7 @@ class JSONAPI(object):
                     }
                     rels_desc = model.__jsonapi_rel_desc__
                     for relationship in prop_value.__jsonapi_desc_for_rels__:
-                        rels_desc.setdefault(attribute, defaults)
+                        rels_desc.setdefault(relationship, defaults)
                         rel_desc = rels_desc[relationship]
                         for action in prop_value.__jsonapi_action__:
                             rel_desc[action] = prop_value
