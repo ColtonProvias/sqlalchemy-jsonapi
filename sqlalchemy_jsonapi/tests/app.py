@@ -14,6 +14,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
 from sqlalchemy_jsonapi import (
     FlaskJSONAPI, Permissions, permission_test, Method, Endpoint,
+    relationship_descriptor, RelationshipActions,
     INTERACTIVE_PERMISSIONS)
 from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
 
@@ -140,6 +141,12 @@ class BlogComment(Timestamp, db.Model):
                         lazy='joined',
                         backref=backref('comments',
                                         lazy='dynamic'))
+
+    @relationship_descriptor(RelationshipActions.GET, 'post')
+    def post_get(self):
+        """No-OP Relationship descriptor to exercise relationship_descriptor"""
+        return self.post
+
     author = relationship('User',
                           lazy='joined',
                           backref=backref('comments',
