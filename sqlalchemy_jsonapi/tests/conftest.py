@@ -12,7 +12,7 @@ from flask import Response
 from flask.testing import FlaskClient
 from sqlalchemy.orm import sessionmaker
 from app import db as db_
-from app import app, User, BlogPost, BlogComment, Log
+from app import app, User, BlogPost, BlogComment, BlogTag, Log
 from faker import Faker
 
 Session = sessionmaker()
@@ -116,6 +116,13 @@ def bunch_of_posts(user, session):
             BlogComment(author=user, content=fake.paragraph()))
     session.commit()
 
+@pytest.fixture
+def bunch_of_tags(session):
+    tags = [BlogTag(slug=fake.word(), description=fake.text()) for x in range(3)]
+    for tag in tags:
+        session.add(tag)
+    session.commit()
+    return tags
 
 @pytest.fixture
 def comment(user, post, session):

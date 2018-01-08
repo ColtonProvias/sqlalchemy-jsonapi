@@ -57,6 +57,43 @@ def test_200_resource_creation_with_relationships(user, client):
         'id'
     ] == str(user.id)
 
+def test_200_resource_creation_with_relationship_array(user, bunch_of_tags, client):
+    payload = {
+        'data': {
+            'type': 'blog-posts',
+            'attributes': {
+                'title': 'Some title',
+                'content': 'Hello, World!',
+                'is-published': True
+            },
+            'relationships': {
+                'author': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                },
+                'tags': {
+                    'data': [{
+                        'type': 'blog-tags',
+                        'id': str(tag.id)
+                        } for tag in bunch_of_tags
+                        ]
+                    }
+            }
+        }
+    }
+    response = client.post(
+        '/api/blog-posts/', data=json.dumps(payload),
+        content_type='application/vnd.api+json').validate(201)
+    assert response.json_data['data']['type'] == 'blog-posts'
+    post_id = response.json_data['data']['id']
+    response = client.get(
+        '/api/blog-posts/{}/?include=author'.format(post_id)).validate(200)
+    assert response.json_data['data']['relationships']['author']['data'][
+        'id'
+    ] == str(user.id)
+
 
 def test_403_when_access_is_denied(client):
     payload = {'data': {'type': 'logs'}}
