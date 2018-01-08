@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy_jsonapi.errors import (
     InvalidTypeForEndpointError, MissingTypeError, PermissionDeniedError,
-    ValidationError, MissingContentTypeError)
+    ValidationError, MissingContentTypeError, BadRequestError)
 from faker import Faker
 
 fake = Faker()
@@ -183,3 +183,28 @@ def test_409_for_wrong_field_name(client):
         '/api/users/', data=json.dumps(payload),
         content_type='application/vnd.api+json').validate(
         409, ValidationError)
+
+
+def test_400_for_unknown_relationship_type(user, client):
+    payload = {
+        'data': {
+            'type': 'blog-posts',
+            'attributes': {
+                'title': 'Some title',
+                'content': 'Hello, World!',
+                'is-published': True
+            },
+            'relationships': {
+                'bogon': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }
+            }
+        }
+    }
+    client.post(
+        '/api/blog-posts/', data=json.dumps(payload),
+        content_type='application/vnd.api+json').validate(
+        400, BadRequestError)
