@@ -47,6 +47,12 @@ class Permissions(Enum):
     EDIT = 102
     DELETE = 103
 
+class MissingKey:
+    def __init__(self, elem):
+        self.elem = elem
+
+    def __repr__(self):
+        return '<{} elem={}>'.format(self.__class__.__name__, self.elem)
 
 ALL_PERMISSIONS = {
     Permissions.VIEW, Permissions.CREATE, Permissions.EDIT, Permissions.DELETE
@@ -266,7 +272,7 @@ class JSONAPI(object):
                     }
                     rels_desc = model.__jsonapi_rel_desc__
                     for relationship in prop_value.__jsonapi_desc_for_rels__:
-                        rels_desc.setdefault(attribute, defaults)
+                        rels_desc.setdefault(relationship, defaults)
                         rel_desc = rels_desc[relationship]
                         for action in prop_value.__jsonapi_action__:
                             rel_desc[action] = prop_value
@@ -980,15 +986,15 @@ class JSONAPI(object):
         data['data'].setdefault('attributes', {})
 
         data_keys = set(map((
-            lambda x: resource.__jsonapi_map_to_py__.get(x, None)),
+            lambda x: resource.__jsonapi_map_to_py__.get(x, MissingKey(x))),
             data['data'].get('relationships', {}).keys()))
         model_keys = set(resource.__mapper__.relationships.keys())
         if not data_keys <= model_keys:
+            data_keys = set([key.elem if isinstance(key, MissingKey) else key for key in data_keys])
             # pragma: no cover
             raise BadRequestError(
-                '{} not relationships for {}'.format(
-                    ', '.join(list(data_keys -
-                                   model_keys)), model.__jsonapi_type__))
+                    '{} not relationships for {}'.format(
+                    ', '.join([repr(key) for key in list(data_keys - model_keys)]), model.__jsonapi_type__))
 
         attrs_to_ignore = {'__mapper__', 'id'}
 
@@ -1043,7 +1049,7 @@ class JSONAPI(object):
                         raise BadRequestError(
                             '{} must be an array'.format(key))
                     for item in data_rel:
-                        if not {'type', 'id'} in set(item.keys()):
+                        if 'type' not in item.keys() or 'id' not in item.keys():
                             raise BadRequestError(
                                 '{} must have type and id keys'.format(key))
                         # pragma: no cover

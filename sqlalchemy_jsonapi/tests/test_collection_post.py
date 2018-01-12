@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy_jsonapi.errors import (
     InvalidTypeForEndpointError, MissingTypeError, PermissionDeniedError,
-    ValidationError, MissingContentTypeError)
+    ValidationError, MissingContentTypeError, BadRequestError)
 from faker import Faker
 
 fake = Faker()
@@ -43,6 +43,43 @@ def test_200_resource_creation_with_relationships(user, client):
                         'id': str(user.id)
                     }
                 }
+            }
+        }
+    }
+    response = client.post(
+        '/api/blog-posts/', data=json.dumps(payload),
+        content_type='application/vnd.api+json').validate(201)
+    assert response.json_data['data']['type'] == 'blog-posts'
+    post_id = response.json_data['data']['id']
+    response = client.get(
+        '/api/blog-posts/{}/?include=author'.format(post_id)).validate(200)
+    assert response.json_data['data']['relationships']['author']['data'][
+        'id'
+    ] == str(user.id)
+
+def test_200_resource_creation_with_relationship_array(user, bunch_of_tags, client):
+    payload = {
+        'data': {
+            'type': 'blog-posts',
+            'attributes': {
+                'title': 'Some title',
+                'content': 'Hello, World!',
+                'is-published': True
+            },
+            'relationships': {
+                'author': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                },
+                'tags': {
+                    'data': [{
+                        'type': 'blog-tags',
+                        'id': str(tag.id)
+                        } for tag in bunch_of_tags
+                        ]
+                    }
             }
         }
     }
@@ -146,3 +183,28 @@ def test_409_for_wrong_field_name(client):
         '/api/users/', data=json.dumps(payload),
         content_type='application/vnd.api+json').validate(
         409, ValidationError)
+
+
+def test_400_for_unknown_relationship_type(user, client):
+    payload = {
+        'data': {
+            'type': 'blog-posts',
+            'attributes': {
+                'title': 'Some title',
+                'content': 'Hello, World!',
+                'is-published': True
+            },
+            'relationships': {
+                'bogon': {
+                    'data': {
+                        'type': 'users',
+                        'id': str(user.id)
+                    }
+                }
+            }
+        }
+    }
+    client.post(
+        '/api/blog-posts/', data=json.dumps(payload),
+        content_type='application/vnd.api+json').validate(
+        400, BadRequestError)

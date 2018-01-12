@@ -49,25 +49,27 @@ Relationship's come in two flavors: to-one and to-many (or tranditional and
 LDS-flavored if you prefer those terms).  To one descriptors have the actions
 GET and SET::
 
-        @rel_descriptor(RelationshipActions.GET, 'significant_other')
+        from sqlalchemy_jsonapi import relationship_descriptor, RelationshipActions
+
+        @relationship_descriptor(RelationshipActions.GET, 'significant_other')
         def getter(self):
             # ...
 
-        @rel_descriptor(RelationshipActions.SET, 'significant_other')
+        @relationship_descriptor(RelationshipActions.SET, 'significant_other')
         def setter(self, value):
             # ...
 
 To-many have GET, APPEND, and DELETE::
 
-        @rel_descriptor(RelationshipActions.GET, 'angry_exes')
+        @relationship_descriptor(RelationshipActions.GET, 'angry_exes')
         def getter(self):
             # ...
 
-        @rel_descriptor(RelationshipActions.APPEND, 'angry_exes')
+        @relationship_descriptor(RelationshipActions.APPEND, 'angry_exes')
         def appender(self):
             # ...
 
-        @rel_descriptor(RelationshipActions.DELETE, 'angry_exes')
+        @relationship_descriptor(RelationshipActions.DELETE, 'angry_exes')
         def remover(self):
             # ...
 

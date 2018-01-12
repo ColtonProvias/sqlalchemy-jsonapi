@@ -9,11 +9,12 @@ from uuid import uuid4
 
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText
+from sqlalchemy import Boolean, Column, ForeignKey, Unicode, UnicodeText, Table
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, validates
 from sqlalchemy_jsonapi import (
     FlaskJSONAPI, Permissions, permission_test, Method, Endpoint,
+    relationship_descriptor, RelationshipActions,
     INTERACTIVE_PERMISSIONS)
 from sqlalchemy_utils import EmailType, PasswordType, Timestamp, UUIDType
 
@@ -91,6 +92,10 @@ class User(Timestamp, db.Model):
         """ Just like a popular social media site, we won't delete users. """
         return False
 
+PostTags = Table('post_tag', db.Model.metadata,
+        Column('post_id', UUIDType, ForeignKey('posts.id')),
+        Column('tag_id', UUIDType, ForeignKey('tags.id'))
+        )
 
 class BlogPost(Timestamp, db.Model):
     """Post model, as if this is a blog."""
@@ -109,6 +114,10 @@ class BlogPost(Timestamp, db.Model):
                           backref=backref('posts',
                                           lazy='dynamic'))
 
+    tags = relationship("BlogTag",
+            secondary=PostTags,
+            back_populates="posts")
+
     @validates('title')
     def validate_title(self, key, title):
         """Keep titles from getting too long."""
@@ -125,6 +134,18 @@ class BlogPost(Timestamp, db.Model):
     def prevent_altering_of_logs(self):
         return False
 
+class BlogTag(Timestamp, db.Model):
+    """Blogs can have tags now"""
+
+    __tablename__ = 'tags'
+
+    id = Column(UUIDType, default=uuid4, primary_key=True)
+    slug = Column(Unicode(100), unique=True)
+    description = Column(UnicodeText)
+
+    posts = relationship("BlogPost",
+            secondary=PostTags,
+            back_populates="tags")
 
 class BlogComment(Timestamp, db.Model):
     """Comment for each Post."""
@@ -140,6 +161,12 @@ class BlogComment(Timestamp, db.Model):
                         lazy='joined',
                         backref=backref('comments',
                                         lazy='dynamic'))
+
+    @relationship_descriptor(RelationshipActions.GET, 'post')
+    def post_get(self):
+        """No-OP Relationship descriptor to exercise relationship_descriptor"""
+        return self.post
+
     author = relationship('User',
                           lazy='joined',
                           backref=backref('comments',
